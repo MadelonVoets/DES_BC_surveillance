@@ -1,48 +1,9 @@
-##-----------------------------------------------------------------------------------------##
-##                                                                                         ##
-##                    Learning and Applying Discrete Event Simulation                      ##
-##                                                                                         ##
-##                        by Koen Degeling and Hendrik Koffijberg                          ##
-##                                                                                         ##
-##-----------------------------------------------------------------------------------------##
-#
-# This script has been prepared for the the "Learning and Applying Discrete Event Simulation"
-# short course presented to the Professional Society for Health Economics and Outcomes
-# Research (ISPOR). It implements a discrete event simulation (DES) that models the pathway of 
-# individuals who are referred for a potential knee replacement, which substantially improves
-# their quality of life. These individuals have to go through several steps/checks before 
-# they may potentially receive surgery for the knee replacement to be placed. Although the
-# case study does not enforce a maximum number of surgeries (or other resources like tests),
-# it is demonstrated how resources are implemented so that the example can be easily extended
-# to consider resource constraints. More details about the hypothetical case study are 
-# provided throughout the code and in the corresponding slide deck that is available from the
-# GitHub repository (see below).
-#
-# Please reach out with any questions or suggestions (koen.degeling@unimelb.edu.au) and check
-# the GitHub repository for potential updates and extensions:
-# - https://github.com/koendegeling/ISPOR_DESinR
-#
-# This 3_probabilistic_analysis.R script demonstrates how the health economic simulation 
-# model that has been defined in the 2_health_economics.R script can be analyzed through a 
-# probabilistic analysis.
-#
 # This script contains the following sections:
 # 1. INITIALIZATION   sets up the environment for the analysis
 # 2. FUNCTIONS        defines functions that are used to obtain parameter values and run the
 #                     simulation model for a given set of parameter values
 # 3. DETERMINISTIC    running the simulation model for the deterministic parameter values
 # 4. PROBABILISTIC    runiing the probabilistic analysis of the simulation model
-#
-# This script was written using R Studio version 1.4.1106 and R version 4.0.3. The versions
-# of the packages used are specified in where they are loaded in the script.
-#
-# Please note that time is modeled in years in this script. Furthermore, this script uses the
-# 'snake_case' to define objects, such as parameters and functions, whereas the 'CamelCase'
-# is used to refer to individuals' attributes in the simulation. This is done deliberately to
-# clearly distinguish between the two.
-#
-#
-#
 #
 ## 1. INITIALIZATION ----
 
@@ -53,8 +14,6 @@
 
 # Uncomment to install the used packages
 #install.packages(pkgs = c("simmer", "flexsurv", "data.table", "MASS"))
-
-
 
 
 ## 2. FUNCTIONS ----
@@ -611,10 +570,6 @@ out_probabilistic <- t(parSapply(cl_fork, 1:n_runs, function(i_run) {
 # Stop the cluster to free up computer resources
 stopCluster(cl_fork)
 
-
-
-
-
 # Specify the socket cluster (for Windows and Mac users) through the number of cores that are
 # to be used. Because this is a socket cluster, we will need to export all the object from
 # the global environment that should be available to the threads to execute the code
@@ -649,7 +604,7 @@ stopCluster(cl_sock)
 
 
 # We can now visualize the result, for example in a incremental cost-effectiveness plane
-library(ggplot2)    # v3.3.3
+library(ggplot2)   
 
 # Turn the matrix with the results of the probabilistic analysis into a data.frame for more
 # straightforward analysis and plotting
