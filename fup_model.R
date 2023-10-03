@@ -28,6 +28,8 @@ p.detected <-
 p.death <-  
 p.sens.test <-
 p.spec.test <-
+  
+# TASKS  
 time_img <- 1
 time_biopsy <- 1
 time_treatment <- 1
@@ -136,74 +138,74 @@ bsc.model <- trajectory() %>%
          trajectory() %>%
            set_attribute(key="FUP.year", mod="+", value=function() 1) %>%
            seize(resource="TN", amount=1) %>% 
-           timeout(task = "time_img") %>%
+           timeout_from_attribute(key = "time_img") %>%
            release(resource="TN", amount=1) %>%
-           rollback(target=8, times=Inf),
+           rollback(target=6, times=Inf),
          
          #Event 2: True Positive / False Positive
          trajectory() %>%
-           timeout(task = "time_img") %>%
+           timeout_from_attribute(key  = "time_img") %>%
            branch(option=function() get_attribute(bsc.sim, "Biopsy.result"), continue=c(T,T),
                   #negative biopsy - rollback to FUP.event 
                   trajectory() %>%
                     set_attribute(key="FUP.year", mod="+", value=function() 1) %>%
                     seize(resource="FP", amount=1) %>% 
-                    timeout(task = "time_biopsy") %>%
+                    timeout_from_attribute(key  = "time_biopsy") %>%
                     release(resource="FP", amount=1) %>%
-                    rollback(target=7),
+                    rollback(target=8),
                     
                   #positive biopsy 
                   trajectory() %>%  
                     set_attribute(key="FUP.year", mod="+", value=function() 1) %>%
                     seize(resource="TP", amount=1) %>% 
-                    timeout(task = "time_biopsy") %>%
+                    timeout_from_attribute(key = "time_biopsy") %>%
                     release(resource="TP", amount=1)
            ),
          #Event 3: False Negative
          trajectory() %>%
            set_attribute(key="FUP.year", mod="+", value=function() 1) %>%
            seize(resource="FP", amount=1) %>% 
-           timeout(task = "time_img") %>%
+           timeout_from_attribute(key = "time_img") %>%
            release(resource="FP", amount=1),
          
          #Event 4: Death other causes
          trajectory() %>%
            set_attribute(key="FUP.year", mod="+", value=function() 1) %>%
            seize(resource="Death", amount=1) %>% 
-           timeout(task = "time_img") %>%
-           timeout(task="death") %>%
+           timeout_from_attribute(key  = "time_img") %>%
+           #timeout_from_attribute(key ="death") %>%
            release(resource="Death", amount=1),
            
          #Event 5: End of Follow-up
          trajectory() %>%
-           timeout(task=function() FUP.time(get_attribute(bsc.sim, "FUP.Event")))
+           timeout(task =function() FUP.time(get_attribute(bsc.sim, "FUP.Event")))
          
   )  %>% #Treatment positive biopsy
   set_attribute(key="Treat.Event", value=function() treat.event()) %>%
   seize(resource="Treatment", amount=1) %>% 
-  timeout(task="time_treatment") %>%
+  timeout_from_attribute(key ="time_treatment") %>%
   release(resource="Treatment", amount=1) %>%
   branch(option=function() get_attribute(bsc.sim, "Treat.Event"), continue=c(T,F),
          
          #Return to disease free after treatment
          trajectory() %>%
-           rollback(target=13, times=Inf),
+           rollback(target=7, times=Inf),
         
          #Death
          trajectory() %>%
            seize(resource="Death", amount=1) %>% 
-           timeout(task="Time") %>%
+           timeout_from_attribute(key ="Time") %>%
            release(resource="Death", amount=1)
   ) %>% 
   
   #Distant Metastasis
   seize(resource="DM", amount=1) %>% 
-  timeout(task="Time") %>%
+  timeout_from_attribute(key ="Time") %>%
   release(resource="DM", amount=1) %>% 
 
   #Breast Cancer Death
   seize(resource="BC_Death", amount=1) %>% 
-  timeout(task="Time") %>%
+  timeout_from_attribute(key ="Time") %>%
   release(resource="BC_Death", amount=1)
          
    
