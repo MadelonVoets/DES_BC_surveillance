@@ -23,7 +23,14 @@ load("");
 
 ## Section 2: Data analysis ----
 #patient characteristics based on distributions??
-
+p.disease <-
+p.detected <-
+p.death <-  
+p.sens.test <-
+p.spec.test <-
+time_img <- 1
+time_biopsy <- 1
+time_treatment <- 1
 
 # Define parameters
 fit.death <- glm(formula=Death~Male+Age, family=binomial(link="logit"), data=dfit); # model for probability of death in a cycle
@@ -41,7 +48,14 @@ setAge  <- function(Male) {
 }  
 setStage <-
 setGrade <- 
-setTrerapy <-
+setTherapy <-
+setRecurrence <- 
+setTestOutcome <- ifelse(setRecurrence == 1,
+                                 ifelse(runif(1) < p.sens.test, 1, 0),                   # 1 = true positive, 0 = false negative
+                                 ifelse(setRecurrence == 0,
+                                        ifelse(runif(1) < (1 - p.spec.test), 1, 0),      # 1 = false positive, 0 = true negative
+                                        0))     
+  
   
 FUP.event <- function() {
   
@@ -53,7 +67,7 @@ FUP.event <- function() {
   # 5) Maximum imaging events
   
   # If the maximum number of cycles is received by the patient, the event is 5
-  if(Tx1.Cycles>=max.cycles) {
+  if(FUP.year>=max.cycles) {
     
     event <- 5;
     
@@ -93,10 +107,10 @@ FUP.time <- function(FUP.Event) {
   
   # Select the appropriate cycle time
   time <- switch(FUP.Event,
-                 "1"=rweibull(n=1, shape=t.cycle$estimate[1], scale=t.cycle$estimate[2]),
-                 "2"=rweibull(n=1, shape=t.cycle$estimate[1], scale=t.cycle$estimate[2]),
-                 "3"=rweibull(n=1, shape=t.major$estimate[1], scale=t.major$estimate[2]),
-                 "4"=runif(n=1, min=t.death$estimate[1], max=t.death$estimate[2]),
+                 "1"=rweibull(),
+                 "2"=rweibull(),
+                 "3"=rweibull(),
+                 "4"=runif(),
                  "5"=0);
   
   # Return the selected time
@@ -115,46 +129,84 @@ bsc.model <- trajectory() %>%
   # Initialization
   #patient characteristics
   set_attribute(key="FUP.year", value=0) %>%
-  set_attribute(key="C", value=0) %>%
-  set_attribute(key="E", value=0) %>%
-  set_attribute(key="FUP.Event", value=function() FUP.event(Tx1.Cycles = get_attribute(bsc.sim, "FUP.year"))) %>%
+  set_attribute(key="FUP.Event", value=function() FUP.event(FUP.years = get_attribute(bsc.sim, "FUP.year"))) %>%
   branch(option=function() get_attribute(bsc.sim, "FUP.Event"), continue=c(T,T,T,F,T),
         
          #Event 1: True Negative
          trajectory() %>%
            set_attribute(key="FUP.year", mod="+", value=function() 1) %>%
-           #set_attribute(key="Time", value=function() FUP.time(get_attribute(bsc.sim, "FUP.Event"))) %>%
            seize(resource="TN", amount=1) %>% 
-           timeout_from_attribute(key="Time") %>%
+           timeout(task = "time_img") %>%
            release(resource="TN", amount=1) %>%
-           #set_attribute(key="C", mod="+", value=function() c.Tx1.day*get_attribute(bsc.sim, "Time") + c.FUP.year) %>%
-           #set_attribute(key="E", mod="+", value=function() get_attribute(bsc.sim, "QoL")*get_attribute(bsc.sim, "Time")) %>%
-           rollback(amount=9, times=Inf),
+           rollback(target=8, times=Inf),
          
          #Event 2: True Positive / False Positive
          trajectory() %>%
-         
+           timeout(task = "time_img") %>%
+           branch(option=function() get_attribute(bsc.sim, "Biopsy.result"), continue=c(T,T),
+                  #negative biopsy - rollback to FUP.event 
+                  trajectory() %>%
+                    set_attribute(key="FUP.year", mod="+", value=function() 1) %>%
+                    seize(resource="FP", amount=1) %>% 
+                    timeout(task = "time_biopsy") %>%
+                    release(resource="FP", amount=1) %>%
+                    rollback(target=7),
+                    
+                  #positive biopsy 
+                  trajectory() %>%  
+                    set_attribute(key="FUP.year", mod="+", value=function() 1) %>%
+                    seize(resource="TP", amount=1) %>% 
+                    timeout(task = "time_biopsy") %>%
+                    release(resource="TP", amount=1)
+           ),
          #Event 3: False Negative
          trajectory() %>%
+           set_attribute(key="FUP.year", mod="+", value=function() 1) %>%
+           seize(resource="FP", amount=1) %>% 
+           timeout(task = "time_img") %>%
+           release(resource="FP", amount=1),
          
          #Event 4: Death other causes
          trajectory() %>%
            set_attribute(key="FUP.year", mod="+", value=function() 1) %>%
-           #set_attribute(key="Time", value=function() FUP.time(get_attribute(bsc.sim, "FUP.Event"))) %>%
            seize(resource="Death", amount=1) %>% 
-           timeout_from_attribute(key="Time") %>%
+           timeout(task = "time_img") %>%
+           timeout(task="death") %>%
            release(resource="Death", amount=1),
-           #set_attribute(key="C", mod="+", value=function() c.Tx1.day*get_attribute(bsc.sim, "Time") + c.Tx1.cycle) %>%
-           #set_attribute(key="E", mod="+", value=function() get_attribute(bsc.sim, "QoL")*get_attribute(bsc.sim, "Time"))
            
          #Event 5: End of Follow-up
          trajectory() %>%
            timeout(task=function() FUP.time(get_attribute(bsc.sim, "FUP.Event")))
          
-  )
+  )  %>% #Treatment positive biopsy
+  set_attribute(key="Treat.Event", value=function() treat.event()) %>%
+  seize(resource="Treatment", amount=1) %>% 
+  timeout(task="time_treatment") %>%
+  release(resource="Treatment", amount=1) %>%
+  branch(option=function() get_attribute(bsc.sim, "Treat.Event"), continue=c(T,F),
+         
+         #Return to disease free after treatment
+         trajectory() %>%
+           rollback(target=13, times=Inf),
+        
+         #Death
+         trajectory() %>%
+           seize(resource="Death", amount=1) %>% 
+           timeout(task="Time") %>%
+           release(resource="Death", amount=1)
+  ) %>% 
+  
+  #Distant Metastasis
+  seize(resource="DM", amount=1) %>% 
+  timeout(task="Time") %>%
+  release(resource="DM", amount=1) %>% 
+
+  #Breast Cancer Death
+  seize(resource="BC_Death", amount=1) %>% 
+  timeout(task="Time") %>%
+  release(resource="BC_Death", amount=1)
+         
    
 # Visualize 
-plot(bsc.model); 
-
-# Visualize to check whether the defined model structure is ok
 plot(bsc.model)
+
