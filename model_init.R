@@ -80,8 +80,15 @@ p
 
 
 ## 3: FUNCTIONS ----
-fn_risk <- function() { 
-  }
+fn_risk <- function(vector, matrix) {
+  matching_rows <- which(apply(matrix[, 1:5], 1, function(row) all(row == vector)))
+  if (length(matching_rows) > 0) {
+    matching_row <- matrix[matching_rows[1], 6:10]
+    return(matching_row)
+    } else {
+      return(NULL) # No exact match found
+      }
+}
 
 fn_img_event <- function() {
   out <-  ifelse(d_LRR == 1,
