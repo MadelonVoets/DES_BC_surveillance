@@ -90,6 +90,24 @@ fn_risk <- function(vector, matrix) {
       }
 }
 
+fn_recurrence_year <- function(patient_characteristics) {
+  annual_risk_vector <- patient_characteristics$annual_recurrence_risk
+  
+  # Generate a random number to determine if recurrence happens in any year
+  yearly_risks <- annual_risk_vector * runif(5)
+  
+  # Check which year (if any) recurrence occurs
+  recurrence_year <- which(yearly_risks > runif(1))
+  
+  if (length(recurrence_year) == 0) {
+    # No recurrence during the follow-up period
+    return(6)  # A value greater than 5 indicates no recurrence during follow-up
+  } else {
+    # Recurrence happens; return the first year of recurrence
+    return(min(recurrence_year))
+  }
+}
+
 fn_img_event <- function() {
   out <-  ifelse(d_LRR == 1,
                  ifelse(runif(1) < p.sens.test, 1, 0),                   # 1 = true positive, 0 = false negative
