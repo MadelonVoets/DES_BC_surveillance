@@ -10,6 +10,7 @@ rm(list=ls()); gc();
 library(simmer);
 library(simmer.plot);
 library(fitdistrplus);
+library(flexsurv)  ;
 
 # Set the working directory
 setwd("")
@@ -20,6 +21,7 @@ source("getMultipleAttributes.R", echo=TRUE);
 
 # Load the dataset
 load("");
+n.i <- 100
 
 ## 2: PARAMETERS ----
 # These are the parameters that define and are used in the trajectory. The prefix of the 
@@ -32,35 +34,49 @@ load("");
 #   u_    utility
 
 #### PATIENT INITIALIZATION #####
+# AGE                               <60 0 | 60-69 1 | 70-79 2 | >= 80 4
+# GRADE                             G1 0 | G2 1 | G3 2
+# STAGE                             S1 0 | S2 1 | S3 2 
+# NODAL                             N0 0 | N1 1 | N2 2 | N3 3
+# MULTI                             No 0 | Yes 1
+# SUR                               BCS 0 | MST 1
+# CHEMO                             No 0 | Yes 1
+# RADIO                             No 0 | Yes 1
+# HORM                              HR- 0 | HR+ THER- 1 | HR+ THER+ 2
+# ANTIHER2                          HER2- 0 | HER2+ THER- 1 | HER2+ THER+ 2
+
 # Parameters for tumour characteristics // INFLUENCE parameters
-p_grade     <- #1/2/3
-p_stage     <- #1/2/3
-p_nstatus   <- #0/1/2/3
-p_multif    <- #0/1
-p_sur       <- #0/1
-p_chemo     <- #0/1
-p_rad       <- #0/1 
-p_horm      <- #0/1/2
-p_antiher2  <- #0/1/2
+p_grade     <- 
+p_stage     <- 
+p_nstatus   <- #stage 1/2: no N2 and N3
+p_multif    <- 
+p_sur       <- 
+p_chemo     <- 
+p_rad       <-  
+p_hrstat    <- 
+p_her2stat  <- 
   
 #make patient characterics dataframe  
 df.char <- data.frame(ID = 1:n.i)  #n.i number of individuals
-df.char$age
-df.char$grade
-df.char$stage
-df.char$nstatus
-df.char$multif
-df.char$sur
-df.char$chemo
-df.char$radio
-df.char$horm
-df.char$antiher2
-  
-
-
+df.char$age <- fn_age()  #distribution or sample?
+df.char$grade <- 
+df.char$stage <- 
+df.char$nstatus <- 
+df.char$multif <- 
+df.char$sur <- 
+df.char$chemo <- 
+df.char$radio <- 
+df.char$horm <- 
+df.char$antiher2 <- 
 
 # Parameter for background mortality (time to death other causes)
+#time to death other causes
+d_death_shape <- 
+d_death_rate  <- 
+
 t_to_death_oc <- 
+  
+  
 t_to_LRR <-
 t_to_DM <- 
 t_first_fup <-   #between x and y days
@@ -75,11 +91,16 @@ p.spec.test <-
 d_pt_age <-
 d_LRR <-   #if time to recurrence is smaller than time past, LRR occurs
 d_DM <-   #if time to dm is smaller than time past, dm occurs 
-p  
   
 
 
 ## 3: FUNCTIONS ----
+fn_age <- function() {                           
+  age <- rnorm(n=1, mean=50, sd=10)
+  
+  return(age)
+}
+
 fn_risk <- function(vector, matrix) {
   matching_rows <- which(apply(matrix[, 1:5], 1, function(row) all(row == vector)))
   if (length(matching_rows) > 0) {
@@ -90,11 +111,11 @@ fn_risk <- function(vector, matrix) {
       }
 }
 
-fn_recurrence_year <- function(patient_characteristics) {
-  annual_risk_vector <- patient_characteristics$annual_recurrence_risk
+fn_recurrence_year <- function(patient_vector) {
+  annual_risk_vector <- patient_vector
   
   # Generate a random number to determine if recurrence happens in any year
-  yearly_risks <- annual_risk_vector * runif(5)
+  yearly_risks <- annual_risk_vector #* runif(5) #introduce extra randomness?
   
   # Check which year (if any) recurrence occurs
   recurrence_year <- which(yearly_risks > runif(1))
