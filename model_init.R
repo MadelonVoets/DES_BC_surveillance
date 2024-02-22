@@ -74,15 +74,13 @@ df.char$antiher2 <-
 d_death_shape <- 
 d_death_rate  <- 
 
-t_to_death_oc <- 
-  
+t_to_death_oc <- #background mortality
   
 t_to_LRR <-
 t_to_DM <- 
-t_first_fup <-   #between x and y days
+t_first_fup <-   #between x and y days #how to handle adherence? 
 t_fup <- 1  
 
-  
 p.sens.test <- 
 p.spec.test <- 
 # TO DO: differentiate between mammo/us/mri
@@ -93,23 +91,24 @@ d_LRR <-   #if time to recurrence is smaller than time past, LRR occurs
 d_DM <-   #if time to dm is smaller than time past, dm occurs 
   
 
-
 ## 3: FUNCTIONS ----
 fn_age <- function() {                           
-  age <- rnorm(n=1, mean=50, sd=10)
+  age <- rnorm(n.i, mean=50, sd=10)
   
   return(age)
 }
 
+#function to match patient vector to influence matrix
 fn_risk <- function(vector, matrix) {
-  matching_rows <- which(apply(matrix[, 1:5], 1, function(row) all(row == vector)))
+  matching_rows <- which(apply(matrix[, 1:10], 1, function(row) all(row == vector)))
   if (length(matching_rows) > 0) {
-    matching_row <- matrix[matching_rows[1], 6:10]
+    matching_row <- matrix[matching_rows[1], 23:27]
     return(matching_row)
     } else {
       return(NULL) # No exact match found
       }
 }
+#When cumulative (13:17) and when conditional (23:27) risk?
 
 fn_recurrence_year <- function(patient_vector) {
   annual_risk_vector <- patient_vector
@@ -140,7 +139,7 @@ fn_img_event <- function() {
 
 fn_img_mod <- function (){
   #mammo, mri or US
-  out <- c(event)
+  out <- c(mod, cost)
   
   return(out)  
 }
@@ -174,7 +173,7 @@ main_trj <- trajectory() %>%
   renege_in(t = function() now(.env = sim) + t_to_death_oc, out = out_trj) %>% 
   
   # Time to first imaging event
-  timeout(task = t_first_fup) %>% #distribution to follow-up event
+  #timeout(task = t_first_fup) %>% #distribution to follow-up event
   
   # Follow-up imaging event
   seize(resource = "Imaging") %>%
@@ -183,7 +182,7 @@ main_trj <- trajectory() %>%
     values = function() fn_img_mod(at = now(.env = sim)),
     mod = '+'
   ) %>%
-  timeout(task = t_fup) %>%
+  #timeout(task = t_fup) %>%
   release(resource = "Imaging")
 
   #first branch, based on what the outcome is of the imaging event
