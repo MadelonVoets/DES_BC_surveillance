@@ -1,0 +1,61 @@
+### TRAJECTORY
+library(simmer);
+library(simmer.plot);
+library(dplyr)
+
+
+out_trj <- trajectory() %>% 
+  set_attribute(
+    keys   = c("time_of_death"), 
+    values = function() fn_time_to_events(
+      currenttime = now(.env = sim), 
+      attrb       = get_attribute(.env = sim, keys = c("start_time"))
+    )
+  )
+
+fup_trj <- trajectory() %>% 
+  set_attribute(keys = "start_time", values = function() now(.env = sim)) %>% 
+  renege_in(t = function() now(.env = sim) + t_to_death_oc, out = out_trj) %>% 
+  #set_attribute("state", "Disease free") %>%
+  
+  #TO DO: insert counter years of surveillance
+  set_attribute(key="surv.year", value=0) %>%
+  
+  # Time to first imaging event
+  #timeout(task = t_first_fup) %>% #distribution to follow-up event
+  
+  # Follow-up imaging event
+  seize(resource = "Imaging") %>%
+  set_attribute(
+    keys = c("mod", "cost"),
+    values = function() fn_img_mod(at = now(.env = sim)),
+    mod = '+'
+  ) %>%
+  #timeout(task = t_fup) %>%
+  release(resource = "Imaging")
+
+  #first branch, based on what the outcome is of the imaging event
+  branch(option = function() fn_img_event(get_attribute(sim, "mod")), continue = c(T,T,T,F,T), 
+       #Event 1: True Negative
+       trajectory() %>%
+         set_attribute(key="surv.year", mod="+", value=function() 1) %>%
+         seize(resource="TN", amount=1) %>% 
+         timeout(task = t_img) %>% #wachttijd imaging?
+         release(resource="TN", amount=1) %>%
+         rollback(target=6, times=Inf),
+       
+       #Event 2: True Positive / False Positive
+       #Event 3: False Negative? 
+       #Event 4: Additional imaging?
+       
+       
+       ) %>% 
+
+fup.model <- trajectory() %>%
+
+  
+
+
+
+# Visualize 
+plot(bsc.model)
