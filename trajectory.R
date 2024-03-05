@@ -144,7 +144,13 @@ fup.trj <- trajectory() %>%
          ) %>%
          timeout(task = t_fn)
   ) %>%
-  seize(resource="Treatment", amount=1)
+  seize(resource="Treatment", amount=1) %>%
+  set_attribute(keys = "TreatmentCount", values=1, mod="+") %>%
+  timeout(task = t_treatment) %>%
+  release(resource="Treatment", amount=1) %>%
+  
+  timeout(task = t_surveilance) %>%
+  branch #rollback to DF or DM
 
  
 # Visualize 
