@@ -80,6 +80,9 @@ t_to_LRR <-
 t_to_DM <- 
 t_first_fup <-   #between x and y days #how to handle adherence? 
 t_fup <- 1  
+t_img <- 0
+t_biopsy <- 0
+t_fn <- 0
 
 p.sens.test <- 
 p.spec.test <- 
@@ -92,13 +95,14 @@ d_DM <-   #if time to dm is smaller than time past, dm occurs
   
 
 ## 3: FUNCTIONS ----
+#PATIENT AGE
 fn_age <- function() {                           
   age <- rnorm(n.i, mean=50, sd=10)
   
   return(age)
 }
 
-#function to match patient vector to influence matrix
+#MATCH patient vector to INFLUENCE matrix
 fn_risk <- function(vector, matrix) {
   matching_rows <- which(apply(matrix[, 1:10], 1, function(row) all(row == vector)))
   if (length(matching_rows) > 0) {
@@ -110,6 +114,7 @@ fn_risk <- function(vector, matrix) {
 }
 #When cumulative (13:17) and when conditional (23:27) risk?
 
+#DETERMINE in which YEAR RECURRENCE occurs
 fn_recurrence_year <- function(patient_vector) {
   annual_risk_vector <- patient_vector
   
@@ -128,6 +133,18 @@ fn_recurrence_year <- function(patient_vector) {
   }
 }
 
+#DETERMINE the IMAGING MODALITY and associated COSTS
+fn_img_mod <- function (){
+  #mammo
+  #mri
+  #US
+  #PET/CT
+  out <- c(mod, cost)
+  
+  return(out)  
+}
+
+#DETERMINE the IMAGING event based on fn_img_mod
 fn_img_event <- function() {
   out <-  ifelse(d_LRR == 1,
                  ifelse(runif(1) < p.sens.test, 1, 0),                   # 1 = true positive, 0 = false negative
@@ -137,12 +154,6 @@ fn_img_event <- function() {
   return(out)
 }
 
-fn_img_mod <- function (){
-  #mammo, mri or US
-  out <- c(mod, cost)
-  
-  return(out)  
-}
 
 fn_time_to_events <- function(currentime, attrb) {
   # currenttime         simulation time
@@ -157,52 +168,6 @@ fn_time_to_events <- function(currentime, attrb) {
   return(out)
 }
 
-
-## 4: TRAJECTORY ----
-out_trj <- trajectory() %>% 
-  set_attribute(
-    keys   = c("time_of_death"), 
-    values = function() fn_time_to_events(
-      currenttime = now(.env = sim), 
-      attrb       = get_attribute(.env = sim, keys = c("start_time"))
-    )
-  )
-
-main_trj <- trajectory() %>% 
-  set_attribute(keys = "start_time", values = function() now(.env = sim)) %>% 
-  renege_in(t = function() now(.env = sim) + t_to_death_oc, out = out_trj) %>% 
-  
-  # Time to first imaging event
-  #timeout(task = t_first_fup) %>% #distribution to follow-up event
-  
-  # Follow-up imaging event
-  seize(resource = "Imaging") %>%
-  set_attribute(
-    keys = c("event"),
-    values = function() fn_img_mod(at = now(.env = sim)),
-    mod = '+'
-  ) %>%
-  #timeout(task = t_fup) %>%
-  release(resource = "Imaging")
-
-  #first branch, based on what the outcome is of the imaging event
-  branch(option = function() fn_img_event(get_attribute(sim, "event")), continue = c(T,T,T,F,T), 
-         #how to handle additional imaging event?
-         #how to handle adherence? 
-         
-         #Event 1: True Negative
-         #Event 2: True Positive / False Positive
-         #Event 3: False Negative? 
-         #Event 4: Additional imaging?
-         
-         
-         
-         
-         ) %>% 
-    
-
-
-## 5: SIMULATION ----
 
 
 
