@@ -1,9 +1,5 @@
 ## 4. TRAJECTORY ----
 
-t_img <- 0
-t_biopsy <- 0
-t_fn <- 0
-
 #background mortality - patient can die at any point in the model
 out.trj <- trajectory() %>% 
   set_attribute(
