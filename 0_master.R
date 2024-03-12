@@ -15,5 +15,11 @@
 # 4. Trajectory       defines the model structure (trajectory)
 # 5. Simulation       defines and runs the simulations, including analysis of the outcomes
 #
-# This script was written using R Studio version XX and R version . The versions
+# This script was written using R Studio version 2023.12.01 and R version 4.3.3. The versions
 # of the packages used are specified in the 1_init section.
+
+source("1_int.R")
+source("2_parameters.R")
+source("3_functions.R")
+source("4_trajectory.R")
+source("5_simulation.R")
