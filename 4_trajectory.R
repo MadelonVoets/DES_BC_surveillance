@@ -1,9 +1,4 @@
-### TRAJECTORY
-library(simmer);
-library(simmer.plot);
-library(dplyr)
-library(DiagrammeRsvg)
-library(rsvg)
+## 4. TRAJECTORY ----
 
 t_img <- 0
 t_biopsy <- 0
@@ -26,8 +21,16 @@ cs.trj <- trajectory() %>%
     values = function() fn_time_to_events(
       currenttime = now(.env = sim), 
       attrb       = get_attribute(.env = sim, keys = c("start_time"))
-    )
-  )
+    ) 
+  ) %>%
+  seize(resource = "WB.Imaging") %>%
+  set_attribute(
+    keys = c("mod", "cost"),
+    values = function() 1, #always PET?
+    mod = '+'
+  ) %>%
+  timeout(task = t_wbimaging) %>%
+  release(resource = "WB.Imaging")
 
 fup.trj <- trajectory() %>% 
   set_attribute(keys = "start_time", values = function() now(.env = sim)) %>% 
