@@ -14,11 +14,17 @@ fn_sex <- function() {
 }
 
 #MATCH patient vector to INFLUENCE matrix
-fn_risk <- function(vector, matrix) {
+fn_risk <- function(vector, matrix, rec) {
   matching_rows <- which(apply(matrix[, 1:10], 1, function(row) all(row == vector)))
   if (length(matching_rows) > 0) {
-    matching_row <- matrix[matching_rows[1], 23:27]
-    return(matching_row)
+    matching_row <- matrix[matching_rows[1], ]
+    if (rec == 1) {
+      return(matching_row[23:27])
+    } else if (rec == 2) {
+      return(matching_row[28:32])
+    } else {
+      stop("Invalid value. It should be either 1 (LRR) or 2 (DM).")
+    }
   } else {
     return(NULL) # No exact match found
   }
@@ -34,6 +40,25 @@ fn_recurrence_year <- function(patient_vector) {
   
   # Check which year (if any) recurrence occurs
   recurrence_year <- which(yearly_risks > runif(1))
+  
+  if (length(recurrence_year) == 0) {
+    # No recurrence during the follow-up period
+    return(6)  # A value greater than 5 indicates no recurrence during follow-up
+  } else {
+    # Recurrence happens; return the first year of recurrence
+    return(min(recurrence_year))
+  }
+}
+
+#DETERMINE in which YEAR DM occurs
+fn_time_to_DM <- function(patient_vector) {
+  annual_risk_vector <- patient_vector
+  
+  # Generate a random number to determine if recurrence happens in any year
+  yearly_risks <- annual_risk_vector #* runif(5) #introduce extra randomness?
+  
+  # Check which year (if any) recurrence occurs
+  recurrence_year <- which(patient_vector > runif(1))
   
   if (length(recurrence_year) == 0) {
     # No recurrence during the follow-up period
@@ -79,7 +104,7 @@ fn_time_to_events <- function(currentime, attrb) {
   return(out)
 }
 
-#Background mortaility
+#Background mortality
 t_days_death <- function(age, sex, mortality_data) {
   # Get the probability of dying for the given age and sex
   prob_death <- mortality_data[age-17, 2+sex]
