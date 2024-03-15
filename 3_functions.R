@@ -32,8 +32,8 @@ fn_risk <- function(vector, matrix, rec) {
 #When cumulative (13:17) and when conditional (23:27) risk?
 
 #DETERMINE in which YEAR RECURRENCE occurs
-fn_recurrence_year <- function(patient_vector) {
-  annual_risk_vector <- patient_vector
+fn_recurrence_year <- function(risk_vector) {
+  annual_risk_vector <- risk_vector
   
   # Generate a random number to determine if recurrence happens in any year
   yearly_risks <- annual_risk_vector #* runif(5) #introduce extra randomness?
@@ -51,21 +51,16 @@ fn_recurrence_year <- function(patient_vector) {
 }
 
 #DETERMINE in which YEAR DM occurs
-fn_time_to_DM <- function(patient_vector) {
-  annual_risk_vector <- patient_vector
-  
-  # Generate a random number to determine if recurrence happens in any year
-  yearly_risks <- annual_risk_vector #* runif(5) #introduce extra randomness?
-  
+fn_time_to_DM <- function(risk_vector) {
   # Check which year (if any) recurrence occurs
-  recurrence_year <- which(patient_vector > runif(1))
+  dm_year <- which(risk_vector > runif(1))
   
-  if (length(recurrence_year) == 0) {
-    # No recurrence during the follow-up period
-    return(6)  # A value greater than 5 indicates no recurrence during follow-up
+  if (length(dm_year) == 0) {
+    # No dm during the follow-up period
+    return(6)  # A value greater than 5 indicates no dm during follow-up
   } else {
-    # Recurrence happens; return the first year of recurrence
-    return(min(recurrence_year))
+    # DM happens; return the first year of recurrence
+    return(min(dm_year))
   }
 }
 
