@@ -7,6 +7,12 @@ fn_age <- function() {
   return(age)
 }
 
+#Patient Sex (100% women) 1 = female, 0 = male
+fn_sex <- function() {
+  sex <- ifelse(runif(1)<p.female, 1, 0);
+  return(sex)
+}
+
 #MATCH patient vector to INFLUENCE matrix
 fn_risk <- function(vector, matrix) {
   matching_rows <- which(apply(matrix[, 1:10], 1, function(row) all(row == vector)))
@@ -71,4 +77,21 @@ fn_time_to_events <- function(currentime, attrb) {
   out <- c(time_start, time_of_death)
   
   return(out)
+}
+
+#Background mortaility
+t_days_death <- function(age, sex, mortality_data) {
+  # Get the probability of dying for the given age and sex
+  prob_death <- mortality_data[age-17, 2+sex]
+  
+  # Simulate death event based on probability
+  death_event <- rbinom(1, 1, prob_death)
+  
+  if (death_event == 1) {
+    # Individual dies
+    return((age-18)*365)
+  } else {
+    # Individual survives, increment age and check again
+    return(t_days_death(age + 1, sex, mortality_data))
+  }
 }
