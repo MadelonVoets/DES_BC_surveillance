@@ -32,6 +32,8 @@ p_rad       <-
 p_hrstat    <- 
 p_her2stat  <- 
   
+p.female <- 1
+
 #make patient characterics dataframe  
 df.char <- data.frame(ID = 1:n.i)  #n.i number of individuals
 df.char$age <- fn_age()  #distribution or sample?
