@@ -32,11 +32,10 @@ fn_risk <- function(vector, matrix, rec) {
 #When cumulative (13:17) and when conditional (23:27) risk?
 
 #DETERMINE in which YEAR RECURRENCE occurs
+#input risk_vector is output fn_risk()
 fn_recurrence_year <- function(risk_vector) {
-  annual_risk_vector <- risk_vector
-  
   # Generate a random number to determine if recurrence happens in any year
-  yearly_risks <- annual_risk_vector #* runif(5) #introduce extra randomness?
+  yearly_risks <- risk_vector #* runif(5) #introduce extra randomness?
   
   # Check which year (if any) recurrence occurs
   recurrence_year <- which(yearly_risks > runif(1))
