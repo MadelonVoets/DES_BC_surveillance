@@ -1,10 +1,13 @@
 ## 3. FUNCTIONS ----
 
 #PATIENT AGE
-fn_age <- function() {                           
-  age <- rnorm(n.i, mean=50, sd=10)
-  
-  return(age)
+#<60 0 | 60-69 1 | 70-79 2 | >= 80 3
+fn_age <- function(n) {                           
+  age <- rnorm(n, mean = 65, sd = 10)
+  print(age)
+  age.grp <- cut(age, breaks = c(-Inf, 60, 70, 80, Inf), labels = FALSE, right = FALSE) - 1 
+  #-1 to have values 0,1,2,3 instead of 1,2,3,4
+  return(age.grp)
 }
 
 #Patient Sex (100% women) 1 = female, 0 = male
@@ -33,7 +36,7 @@ fn_risk <- function(vector, matrix, rec) {
 
 #DETERMINE in which YEAR RECURRENCE occurs
 #input risk_vector is output fn_risk()
-fn_recurrence_year <- function(risk_vector) {
+fn_time_to_DM <- function(risk_vector) {
   # Generate a random number to determine if recurrence happens in any year
   yearly_risks <- risk_vector #* runif(5) #introduce extra randomness?
   
@@ -45,7 +48,8 @@ fn_recurrence_year <- function(risk_vector) {
     return(6)  # A value greater than 5 indicates no recurrence during follow-up
   } else {
     # Recurrence happens; return the first year of recurrence
-    return(min(recurrence_year))
+    #return(min(recurrence_year)) #in years or in days?
+    return(min(recurrence_year*365))
   }
 }
 
@@ -59,9 +63,72 @@ fn_time_to_DM <- function(risk_vector) {
     return(6)  # A value greater than 5 indicates no dm during follow-up
   } else {
     # DM happens; return the first year of recurrence
-    return(min(dm_year))
+    #return(min(dm_year)) 
+    return(min(dm_year*365)) #in years or in days?
   }
 }
+
+#Background mortality
+fn_days_death_oc <- function(age, sex, mortality_data) {
+  # Get the probability of dying for the given age and sex
+  prob_death <- mortality_data[age-17, 2+sex]
+  
+  # Simulate death event based on probability
+  death_event <- rbinom(1, 1, prob_death)
+  
+  if (death_event == 1) {
+    # Individual dies
+    return((age-18)*365)
+  } else {
+    # Individual survives, increment age and check again
+    return(t_days_death(age + 1, sex, mortality_data))
+  }
+}
+
+fn_time_to_events <- function(currentime, attrb) {
+  # currenttime         simulation time
+  # attrb               vector with times of death other causes, time of lrr, time of dm (time of bc death?)
+  
+  time_start <- attrb[1]
+  time_of_death <- currenttime
+  
+  out <- c(time_start, time_of_death)
+  
+  return(out)
+}
+
+fn_gen_pt <- function(n.pat = 100, seed = 1){
+  # Arguments:
+  # n_pat: number of patients to generate
+  # seed: seed: seed for the random number generator, default is 1
+  # Returns: 
+  # df_patient: data frame of sampled parameter values
+  
+  set.seed(seed) # set a seed to be able to reproduce the same results
+  
+  df_patient <- data.frame(
+    
+    #INFLUENCE Characteristics 
+    ID = 1:n.pat,                              #n.pat number of individuals
+    age = fn_age(n.pat)                           #distribution or sample?
+    #grade = ,                                 #
+    #stage = ,
+    #nstatus = , 
+    #multif = ,
+    #sur = ,
+    #chemo = , 
+    #radio = , 
+    #horm = ,
+    #antiher2 = ,
+    
+  
+  )
+  
+  return(df_patient)
+}
+
+
+#########################################################################
 
 #DETERMINE the IMAGING MODALITY and associated COSTS
 fn_img_mod <- function (){
@@ -85,32 +152,5 @@ fn_img_event <- function() {
 }
 
 
-fn_time_to_events <- function(currentime, attrb) {
-  # currenttime         simulation time
-  # attrb               vector with times of death other causes, time of lrr, time of dm (time of bc death?)
-  
-  
-  time_start <- attrb[1]
-  time_of_death <- currenttime
-  
-  out <- c(time_start, time_of_death)
-  
-  return(out)
-}
 
-#Background mortality
-t_days_death <- function(age, sex, mortality_data) {
-  # Get the probability of dying for the given age and sex
-  prob_death <- mortality_data[age-17, 2+sex]
-  
-  # Simulate death event based on probability
-  death_event <- rbinom(1, 1, prob_death)
-  
-  if (death_event == 1) {
-    # Individual dies
-    return((age-18)*365)
-  } else {
-    # Individual survives, increment age and check again
-    return(t_days_death(age + 1, sex, mortality_data))
-  }
-}
+
