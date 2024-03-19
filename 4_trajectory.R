@@ -30,7 +30,8 @@ cs.trj <- trajectory() %>%
 
 fup.trj <- trajectory() %>% 
   set_attribute(keys = "start_time", values = function() now(.env = sim)) %>% 
-  renege_in(t = function() now(.env = sim) + t_to_death_oc, out = out.trj) %>% 
+  renege_in(t = function() now(.env = sim) + fn_days_death_oc, out = out.trj) %>% 
+
   #set_attribute(key="state", "DF") %>%
   set_attribute(key="state_DF", mod="+", value=function() 1) %>%
   

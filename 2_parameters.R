@@ -32,30 +32,14 @@ p_rad       <-
 p_hrstat    <- 
 p_her2stat  <- 
   
-p.female <- 1
-
-#make patient characterics dataframe  
-df.char <- data.frame(ID = 1:n.i)  #n.i number of individuals
-df.char$age <- fn_age()  #distribution or sample?
-df.char$grade <- 
-df.char$stage <- 
-df.char$nstatus <- 
-df.char$multif <- 
-df.char$sur <- 
-df.char$chemo <- 
-df.char$radio <- 
-df.char$horm <- 
-df.char$antiher2 <- 
+p.female <- 1 #no males
   
 # Parameter for background mortality (time to death other causes)
 #time to death other causes
 d_death_shape <- 
 d_death_rate  <- 
   
-t_to_death_oc <- #background mortality
-  
-t_to_LRR <-
-t_to_DM <- 
+#duration parameters
 t_first_fup <-   #between x and y days #how to handle adherence? 
 t_fup <- 0  
 t_img <- 0
