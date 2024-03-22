@@ -168,6 +168,29 @@ fn_time_to_events <- function(currentime, attrb) {
   return(out)
 }
 
+#old
+fn_age <- function(n) {                           
+  age <- rnorm(n, mean=60, sd=10)
+  age.grp <- numeric(n)
+  
+  for (i in 1:n) {
+    if (age[i] < 60){
+      age.grp[i] = 0
+    } else if (age[i] >= 60 & age[i] < 70) {
+      age.grp[i] = 1
+    } else if (age[i] >= 70 & age[i] < 80) {
+      age.grp[i] = 2
+    } else if (age[i] >= 80) {
+      age.grp[i] = 3
+    } else {
+      stop("Something is wrong, could not find age")
+    }
+  }
+  
+  return(age.grp)
+}
+
+
 
 
 
