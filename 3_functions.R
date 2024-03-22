@@ -4,7 +4,6 @@
 #<60 0 | 60-69 1 | 70-79 2 | >= 80 3
 fn_age <- function(n) {                           
   age <- rnorm(n, mean = 65, sd = 10)
-  print(age)
   age.grp <- cut(age, breaks = c(-Inf, 60, 70, 80, Inf), labels = FALSE, right = FALSE) - 1 
   #-1 to have values 0,1,2,3 instead of 1,2,3,4
   return(age.grp)
@@ -36,7 +35,7 @@ fn_risk <- function(vector, matrix, rec) {
 
 #DETERMINE in which YEAR RECURRENCE occurs
 #input risk_vector is output fn_risk()
-fn_time_to_DM <- function(risk_vector) {
+fn_time_to_LRR <- function(risk_vector) {
   # Generate a random number to determine if recurrence happens in any year
   yearly_risks <- risk_vector #* runif(5) #introduce extra randomness?
   
@@ -45,7 +44,7 @@ fn_time_to_DM <- function(risk_vector) {
   
   if (length(recurrence_year) == 0) {
     # No recurrence during the follow-up period
-    return(6)  # A value greater than 5 indicates no recurrence during follow-up
+    return(0)  # A value greater than 5 indicates no recurrence during follow-up
   } else {
     # Recurrence happens; return the first year of recurrence
     #return(min(recurrence_year)) #in years or in days?
@@ -60,7 +59,7 @@ fn_time_to_DM <- function(risk_vector) {
   
   if (length(dm_year) == 0) {
     # No dm during the follow-up period
-    return(6)  # A value greater than 5 indicates no dm during follow-up
+    return(0)  # A value greater than 5 indicates no dm during follow-up
   } else {
     # DM happens; return the first year of recurrence
     #return(min(dm_year)) 
@@ -109,22 +108,31 @@ fn_gen_pt <- function(n.pat = 100, seed = 1){
   df_patient <- data.frame(
     
     #INFLUENCE Characteristics 
-    ID = 1:n.pat,                              #n.pat number of individuals
-    age = fn_age(n.pat)                           #distribution or sample?
-    #grade = ,                                 #
-    #stage = ,
+    ID = 1:n.pat,                                                                             #n.pat number of individuals
+    age = fn_age(n.pat),                                                                      #distribution or sample?
+    grade = sample(0:2, n.pat, replace = TRUE, prob = c(p.grade1, p.grade2, p.grade3)),                    #
+    stage = sample(0:2, n.pat, replace = TRUE, prob = c(p.stage1, p.stage2, p.stage3)),
     #nstatus = , 
-    #multif = ,
-    #sur = ,
-    #chemo = , 
-    #radio = , 
+    multif = ifelse(runif(n.pat) < p.multif, 1, 0),
+    sur = ifelse(runif(n.pat) < p.sur, 1, 0),
+    chemo = ifelse(runif(n.pat) < p.chemo, 1, 0), 
+    radio = ifelse(runif(n.pat) < p.radio, 1, 0) 
     #horm = ,
     #antiher2 = ,
     
+    #MODEL parameters
+    
+
   
   )
   
   return(df_patient)
+}
+
+
+#Truncated normal sampler a = min, b = max
+fn_trnorm <- function(n, mean, sd, a = 1, b = Inf){
+  qnorm(runif(n, pnorm(a, mean, sd), pnorm(b, mean, sd)), mean, sd)
 }
 
 

@@ -22,22 +22,28 @@
 # ANTIHER2                          HER2- 0 | HER2+ THER- 1 | HER2+ THER+ 2
 
 # Parameters for tumour characteristics // INFLUENCE parameters
-p_grade     <- 
-p_stage     <- 
-p_nstatus   <- #stage 1/2: no N2 and N3
-p_multif    <- 
-p_sur       <- 
-p_chemo     <- 
-p_rad       <-  
-p_hrstat    <- 
-p_her2stat  <- 
+p.grade1 <- 0.34 #F
+p.grade2 <- 0.33 #F
+p.grade3 <- 0.33 #F
+  
+p.stage1 <- 0.54 #F
+p.stage2 <- 0.33 #F
+p.stage3 <- 0.13 #F  
+
+p.nstatus   <- #stage 1/2: no N2 and N3
+p.multif    <- 0.5 #F
+p.sur       <- 
+p.chemo     <- 
+p.rad       <-  
+p.hrstat    <- 
+p.her2stat  <- 
   
 p.female <- 1 #no males
-  
-# Parameter for background mortality (time to death other causes)
-#time to death other causes
-d_death_shape <- 
-d_death_rate  <- 
+
+# Tumour model parameters  
+# Define parameters for the normal distribution
+mean.norm.vdt <- 178.75
+sd.norm.vdt <- 75.75
   
 #duration parameters
 t_first_fup <-   #between x and y days #how to handle adherence? 
