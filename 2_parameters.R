@@ -30,13 +30,13 @@ p.stage1 <- 0.54 #F
 p.stage2 <- 0.33 #F
 p.stage3 <- 0.13 #F  
 
-p.nstatus   <- #stage 1/2: no N2 and N3
+p.nstatus   <- 1 #stage 1/2: no N2 and N3
 p.multif    <- 0.5 #F
-p.sur       <- 
-p.chemo     <- 
-p.rad       <-  
-p.hrstat    <- 
-p.her2stat  <- 
+p.sur       <- 1
+p.chemo     <- 1 
+p.rad       <- 1 
+p.hrstat    <- 1
+p.her2stat  <- 1 
   
 p.female <- 1 #no males
 
@@ -49,8 +49,8 @@ d_t <- 5                                      #detection threshold (mm)
 
 V_d <-((4/3)*pi*(d_t/2)^3)/1000               #volume in cm^3 based on diameter in mm
 V_0 <-((4/3)*pi*(d_0/2)^3)/1000               #volume in cm^3 based on diameter in mm
-t_min <- fn_time_to_LRR() - 365               #year of recurrence -1 * 365
-t_max <- fn_time_to_LRR()                     #year of recurrence * 365
+#t_min <- fn_time_to_LRR() - 365               #year of recurrence -1 * 365
+#t_max <- fn_time_to_LRR()                     #year of recurrence * 365
   
 #duration parameters
 t_first_fup <-   #between x and y days #how to handle adherence? 

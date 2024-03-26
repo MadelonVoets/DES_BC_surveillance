@@ -104,31 +104,57 @@ fn_gen_pt <- function(n.pat = 100, seed = 1){
   # df_patient: data frame of sampled parameter values
   
   set.seed(seed) # set a seed to be able to reproduce the same results
+  age <- fn_age(n.pat)                                                                      #distribution or sample?
+  grade <- sample(0:2, n.pat, replace = TRUE, prob = c(p.grade1, p.grade2, p.grade3))          
+  stage <- sample(0:2, n.pat, replace = TRUE, prob = c(p.stage1, p.stage2, p.stage3))
+  nstatus <- numeric(n.pat)
+  multif <- ifelse(runif(n.pat) < p.multif, 1, 0)
+  sur <- ifelse(runif(n.pat) < p.sur, 1, 0)
+  chemo <- ifelse(runif(n.pat) < p.chemo, 1, 0) 
+  radio <- ifelse(runif(n.pat) < p.rad, 1, 0) 
+  horm <- numeric(n.pat)
+  antiher2 <- numeric(n.pat)
   
   df_patient <- data.frame(
-    
     #INFLUENCE Characteristics 
     ID = 1:n.pat,                                                                             #n.pat number of individuals
-    age = fn_age(n.pat),                                                                      #distribution or sample?
-    grade = sample(0:2, n.pat, replace = TRUE, prob = c(p.grade1, p.grade2, p.grade3)),                    #
-    stage = sample(0:2, n.pat, replace = TRUE, prob = c(p.stage1, p.stage2, p.stage3)),
-    #nstatus = , 
-    multif = ifelse(runif(n.pat) < p.multif, 1, 0),
-    sur = ifelse(runif(n.pat) < p.sur, 1, 0),
-    chemo = ifelse(runif(n.pat) < p.chemo, 1, 0), 
-    radio = ifelse(runif(n.pat) < p.radio, 1, 0) 
-    #horm = ,
-    #antiher2 = ,
-    
-    #MODEL parameters
-    
-
-  
+    age = age,
+    grade = grade,
+    stage = stage,
+    nstatus = nstatus,
+    multif = multif,
+    sur = sur,
+    chemo = chemo,
+    radio = radio,
+    horm = horm,
+    antiher2 = antiher2
   )
+    
+  #MODEL parameters
+  #Time to DM based on INFLUENCE risk vector
+  df_patient$t.DM = apply(df_patient, 1, function(row) {
+    vector <- c(row["age"], row["grade"], row["stage"], row["nstatus"], row["multif"], row["sur"], row["chemo"], row["radio"], row["horm"], row["antiher2"])
+    result <- fn_time_to_DM(fn_risk(vector, inf_matrix, 2))
+    return(result)
+  })
+  #Time to LRR based on INFLUENCE risk vector
+  df_patient$t.LRR = apply(df_patient, 1, function(row) {
+    vector <- c(row["age"], row["grade"], row["stage"], row["nstatus"], row["multif"], row["sur"], row["chemo"], row["radio"], row["horm"], row["antiher2"])
+    result <- fn_time_to_DM(fn_risk(vector, inf_matrix, 1))
+    return(result)
+  })
+  #VDT
+  df_patient$vdt = apply(df_patient, 1, function(row) {
+    t_LRR <- row["t.LRR"]
+    vdt <- fn_trnorm(1, mean.norm.vdt, sd.norm.vdt, fn_vdt(V_d, V_0, t_LRR - 365, t_LRR)[1], fn_vdt(V_d, V_0, t_LRR - 365, t_LRR)[2]) 
+    if (t_LRR == 0 || vdt < 1){
+      vdt <- 0
+    }
+    return(vdt)
+  })
   
   return(df_patient)
 }
-
 
 #Truncated normal sampler a = min, b = max
 #mean.nrom.vdt
