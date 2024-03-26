@@ -16,7 +16,7 @@ fn_sex <- function() {
 }
 
 #MATCH patient vector to INFLUENCE matrix
-fn_risk <- function(vector, matrix, rec) {
+fn_risk <- function(vector, matrix = inf_matrix, rec) {
   matching_rows <- which(apply(matrix[, 1:10], 1, function(row) all(row == vector)))
   if (length(matching_rows) > 0) {
     matching_row <- matrix[matching_rows[1], ]
@@ -131,10 +131,18 @@ fn_gen_pt <- function(n.pat = 100, seed = 1){
 
 
 #Truncated normal sampler a = min, b = max
-fn_trnorm <- function(n, mean, sd, a = 1, b = Inf){
-  qnorm(runif(n, pnorm(a, mean, sd), pnorm(b, mean, sd)), mean, sd)
+#mean.nrom.vdt
+#sd.norm.vdt
+fn_trnorm <- function(n, mean, sd, vdt_min = 1, vdt_max = Inf){
+  qnorm(runif(n, pnorm(vdt_min, mean, sd), pnorm(vdt_max, mean, sd)), mean, sd)
 }
 
+#volume doubling time 
+fn_vdt <- function(V_t, V_0, t_min, t_max) {
+  vdt_min <- t_min * log(2) / log(V_t / V_0)
+  vdt_max <- t_max * log(2) / log(V_t / V_0)
+  return(c(vdt_min, vdt_max))
+}
 
 #########################################################################
 

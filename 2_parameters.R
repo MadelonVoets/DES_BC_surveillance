@@ -44,6 +44,13 @@ p.female <- 1 #no males
 # Define parameters for the normal distribution
 mean.norm.vdt <- 178.75
 sd.norm.vdt <- 75.75
+d_0 <- 0.1                                    #initial tumour diameter (mm)
+d_t <- 5                                      #detection threshold (mm)
+
+V_d <-((4/3)*pi*(d_t/2)^3)/1000               #volume in cm^3 based on diameter in mm
+V_0 <-((4/3)*pi*(d_0/2)^3)/1000               #volume in cm^3 based on diameter in mm
+t_min <- fn_time_to_LRR() - 365               #year of recurrence -1 * 365
+t_max <- fn_time_to_LRR()                     #year of recurrence * 365
   
 #duration parameters
 t_first_fup <-   #between x and y days #how to handle adherence? 
