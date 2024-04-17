@@ -10,35 +10,43 @@
 #   u_    utility
 
 #### PATIENT INITIALIZATION #####
-# AGE                               <60 0 | 60-69 1 | 70-79 2 | >= 80 4
-# GRADE                             G1 0 | G2 1 | G3 2
-# STAGE                             S1 0 | S2 1 | S3 2 
-# NODAL                             N0 0 | N1 1 | N2 2 | N3 3
-# MULTI                             No 0 | Yes 1
-# SUR                               BCS 0 | MST 1
-# CHEMO                             No 0 | Yes 1
-# RADIO                             No 0 | Yes 1
-# HORM                              HR- 0 | HR+ THER- 1 | HR+ THER+ 2
-# ANTIHER2                          HER2- 0 | HER2+ THER- 1 | HER2+ THER+ 2
-
-# Parameters for tumour characteristics // INFLUENCE parameters
-p.grade1 <- 0.34 #F
-p.grade2 <- 0.33 #F
-p.grade3 <- 0.33 #F
-  
-p.stage1 <- 0.54 #F
-p.stage2 <- 0.33 #F
-p.stage3 <- 0.13 #F  
-
-p.nstatus   <- 1 #stage 1/2: no N2 and N3
-p.multif    <- 0.5 #F
-p.sur       <- 1
-p.chemo     <- 1 
-p.rad       <- 1 
-p.hrstat    <- 1
-p.her2stat  <- 1 
-  
 p.female <- 1 #no males
+# AGE                               <60 0 | 60-69 1 | 70-79 2 | >= 80 4
+m.age <- m.age
+sd.age <- sd.age
+# GRADE                             G1 0 | G2 1 | G3 2
+p.gr1 <- p.gr1
+p.gr2 <- p.gr2
+p.gr3 <- p.gr3
+# STAGE                             S1 0 | S2 1 | S3 2 
+p.st1 <- p.st1
+p.st2 <- p.st2
+p.st3 <- p.st3
+# NODAL                             N0 0 | N1 1 | N2 2 | N3 3
+p.n0 <- p.n0
+p.n1 <- p.n1
+p.n2 <- p.n2
+p.n3 <- p.n3
+# MULTI                             No 0 | Yes 1
+p.multi.n <- p.multi.n
+p.multi.y <- p.multi.y
+# SUR                               BCS 0 | MST 1
+p.bcs <- p.bcs
+p.mst <- p.mst
+# CHEMO                             No 0 | Yes 1
+p.chemo.n <- p.chemo.n
+p.chemo.y <- p.chemo.y
+# RADIO                             No 0 | Yes 1
+p.rt.y <- p.rt.y
+p.rt.n <- p.rt.n
+# HORM                              HR- 0 | HR+ THER- 1 | HR+ THER+ 2
+p.hr.n <- p.hr.n
+p.hr.y.ther.n <- p.hr.y.ther.n
+p.hr.y.ther.y <- p.hr.y.ther.y
+# ANTIHER2                          HER2- 0 | HER2+ THER- 1 | HER2+ THER+ 2
+p.her2.n <- p.her2.n
+p.her2.y.ther.n <- p.her2.y.ther.n
+p.her2.y.ther.y <- p.her2.y.ther.y
 
 # Tumour model parameters  
 # Define parameters for the normal distribution
