@@ -61,7 +61,7 @@ V_0 <-((4/3)*pi*(d_0/2)^3)/1000               #volume in cm^3 based on diameter 
 #t_max <- fn_time_to_LRR()                     #year of recurrence * 365
   
 #duration parameters
-t_first_fup <-   #between x and y days #how to handle adherence? 
+t_first_fup <- rnorm(1, mean = 0, sd = 15.5)  #between x and y days #how to handle adherence? 
 t_fup <- 0  
 t_img <- 0
 t_biopsy <- 0
