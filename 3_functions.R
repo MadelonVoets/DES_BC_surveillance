@@ -6,17 +6,54 @@ rtnorm <- function(n, mean, sd, a = -Inf, b = Inf){
 
 #PATIENT AGE
 #<60 0 | 60-69 1 | 70-79 2 | >= 80 3
-fn_age <- function(n) {                           
-  age <- rtnorm(n, mean = m.age, sd = sd.age, a = 18, b = 100)
+fn_age <- function() {                           
+  age <- rtnorm(1, mean = m.age, sd = sd.age, a = 18, b = 100)
   age.grp <- cut(age, breaks = c(-Inf, 60, 70, 80, Inf), labels = FALSE, right = FALSE) - 1 
   #-1 to have values 0,1,2,3 instead of 1,2,3,4
-  return(age.grp)
+  return(c(age, age.grp))
 }
 
 #Patient Sex (100% women) 1 = female, 0 = male
 fn_sex <- function() {
   sex <- ifelse(runif(1)<p.female, 1, 0);
   return(sex)
+}
+fn_grade <- function() {
+  grade <- sample(0:2, 1, replace = TRUE, prob = c(p.gr1, p.gr2, p.gr3))
+  return(grade)
+}
+
+fn_stage <- function() {
+  stage <- sample(0:2, 1, replace = TRUE, prob = c(p.st1, p.st2, p.st3))
+    return(stage)
+}
+fn_nstatus <- function() {
+  nstatus <- sample(0:3, 1, replace = TRUE, prob = c(p.n0, p.n1, p.n2, p.n3))
+    return(nstatus)
+}
+fn_multif <- function() {
+  multif <- ifelse(runif(1) < p.multi.y, 1, 0)
+    return(multif)
+}
+fn_sur <- function() {
+  sur <- ifelse(runif(1) < p.mst, 1, 0)
+    return(sur)
+}
+fn_chemo <- function() {
+  chemo <- ifelse(runif(1) < p.chemo.y, 1, 0) 
+  return(chemo)
+}
+fn_radio <- function() {
+  radio <- ifelse(runif(1) < p.rt.y, 1, 0) 
+    return(radio)
+}
+fn_horm <- function() {
+  horm <- sample(0:2, 1, replace = TRUE, prob = c(p.hr.n, p.hr.y.ther.n, p.hr.y.ther.y))
+    return(horm)
+}
+fn_antiher2 <- function() {
+  antiher2 <- sample(0:2, 1, replace = TRUE, prob = c(p.her2.n, p.her2.y.ther.n, p.her2.y.ther.y))
+    return(antiher2)
 }
 
 #MATCH patient vector to INFLUENCE matrix
@@ -84,7 +121,7 @@ fn_days_death_oc <- function(age, sex, mortality_data) {
     return((age-18)*365)
   } else {
     # Individual survives, increment age and check again
-    return(t_days_death(age + 1, sex, mortality_data))
+    return(fn_days_death_oc(age + 1, sex, mortality_data))
   }
 }
 
@@ -124,84 +161,6 @@ fn_t <- function(V_t, V_0, vdt) {
   return(t)
 }
 
-fn_gen_pt <- function(n.pat = 100, seed = 1){
-  # Arguments:
-  # n_pat: number of patients to generate
-  # seed: seed: seed for the random number generator, default is 1
-  # Returns: 
-  # df_patient: data frame of sampled parameter values
-  
-  set.seed(seed) # set a seed to be able to reproduce the same results
-  age <- fn_age(n.pat)                                                                      #distribution or sample?
-  grade <- sample(0:2, n.pat, replace = TRUE, prob = c(p.gr1, p.gr2, p.gr3))          
-  stage <- sample(0:2, n.pat, replace = TRUE, prob = c(p.st1, p.st2, p.st3))
-  nstatus <- sample(0:3, n.pat, replace = TRUE, prob = c(p.n0, p.n1, p.n2, p.n3))
-  multif <- ifelse(runif(n.pat) < p.multi.y, 1, 0)
-  sur <- ifelse(runif(n.pat) < p.mst, 1, 0)
-  chemo <- ifelse(runif(n.pat) < p.chemo.y, 1, 0) 
-  radio <- ifelse(runif(n.pat) < p.rt.y, 1, 0) 
-  horm <- sample(0:2, n.pat, replace = TRUE, prob = c(p.hr.n, p.hr.y.ther.n, p.hr.y.ther.y))
-  antiher2 <- sample(0:2, n.pat, replace = TRUE, prob = c(p.her2.n, p.her2.y.ther.n, p.her2.y.ther.y))
-  
-
-  df_patient <- data.frame(
-    #INFLUENCE Characteristics 
-    ID = 1:n.pat,                                                                             #n.pat number of individuals
-    age = age,
-    grade = grade,
-    stage = stage,
-    nstatus = nstatus,
-    multif = multif,
-    sur = sur,
-    chemo = chemo,
-    radio = radio,
-    horm = horm,
-    antiher2 = antiher2
-  )
-    
-  #MODEL parameters
-  #Time to DM based on INFLUENCE risk vector
-  df_patient$t.DM = apply(df_patient, 1, function(row) {
-    vector <- c(row["age"], row["grade"], row["stage"], row["nstatus"], row["multif"], row["sur"], row["chemo"], row["radio"], row["horm"], row["antiher2"])
-    result <- fn_t_to_tumour(fn_risk(vector, inf_matrix, 2))
-    return(result)
-  })
-  #Time to LRR based on INFLUENCE risk vector
-  df_patient$t.LRR = apply(df_patient, 1, function(row) {
-    vector <- c(row["age"], row["grade"], row["stage"], row["nstatus"], row["multif"], row["sur"], row["chemo"], row["radio"], row["horm"], row["antiher2"])
-    result <- fn_t_to_tumour(fn_risk(vector, inf_matrix, 1))
-    return(result)
-  })
-  #VDT LLR & DM
-  df_patient$vdt_lrr <- apply(df_patient, 1, function(row) {
-    t_LRR <- row["t.LRR"]
-    if (t_LRR == 0) {
-      vdt <- 0
-    } else {
-      vdt <- fn_trnorm(1, mean.norm.vdt, sd.norm.vdt, fn_minmax(V_d, V_0, t_LRR - 365, t_LRR)[1], fn_minmax(V_d, V_0, t_LRR - 365, t_LRR)[2]) 
-      if (vdt < 1){
-        vdt <- 0
-      }
-    }
-    return(vdt)
-  })
-  
-  df_patient$vdt_dm <- apply(df_patient, 1, function(row) {
-    t_DM <- row["t.DM"]
-    if (t_DM == 0) {
-      vdt <- 0
-    } else {
-      vdt <- fn_trnorm(1, mean.norm.vdt, sd.norm.vdt, fn_minmax(V_d, V_0, t_DM - 365, t_DM)[1], fn_minmax(V_d, V_0, t_DM - 365, t_DM)[2]) 
-      if (vdt < 1){
-        vdt <- 0
-      }
-    }
-    return(vdt)
-  })
-  
-  return(df_patient)
-}
-
 
 #########################################################################
 
@@ -226,6 +185,7 @@ fn_img_event <- function() {
   return(out)
 }
 
-
+#fn_t_symp_llr <- 
+#fn_t_symp_dm <- 
 
 
