@@ -23,3 +23,5 @@ source("2_parameters.R")
 source("3_functions.R")
 source("4_trajectory.R")
 source("5_simulation.R")
+
+#Tests
