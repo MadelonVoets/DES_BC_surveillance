@@ -161,31 +161,56 @@ fn_t <- function(V_t, V_0, vdt) {
   return(t)
 }
 
-
-#########################################################################
-
 #DETERMINE the IMAGING MODALITY and associated COSTS
-fn_img_mod <- function (){
+fn_img_mod <- function (mod = 0, at = NULL){
   #mammo
+  if(mod == 1){
+    
+  }
   #mri
+  
   #US
+  
   #PET/CT
   out <- c(mod, cost)
   
   return(out)  
 }
 
+#BIOPSY result to distinguish FP and TP. Assumes 100% sensitivity
+fn_biopsy <- function(result = 1){
+  #1 = negative biopsy / FP
+  #2 = positive biopsy / TP
+  out <- ifelse(result == 1, 1, 
+                ifelse(result == 2, 2, "No correct biopsy reslt - CHECK"))
+  return(out)
+}
+
+#########################################################################
+
 #DETERMINE the IMAGING event based on fn_img_mod
+# 1 = Suspicion -> additional imaging
+# 2 = FN 
 fn_img_event <- function() {
   out <-  ifelse(d_LRR == 1,
                  ifelse(runif(1) < p.sens.test, 1, 0),                   # 1 = true positive, 0 = false negative
                  ifelse(d_LRR == 0,
                         ifelse(runif(1) < (1 - p.spec.test), 1, 0),      # 1 = false positive, 0 = true negative
                         0)) 
+  out <- c(result, num)
   return(out)
 }
 
-#fn_t_symp_llr <- 
-#fn_t_symp_dm <- 
+ 
+fn_add_img <- function(){
+  mod <- 
+  
+  out <- c(mod, cost)    
+}
+# 1 = TN
+# 2 = TP / FP
+fn_add_img_event <- function(){
+  
+}
 
 
