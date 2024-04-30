@@ -66,14 +66,32 @@ t_fup <- 0
 t_img <- 0
 t_biopsy <- 0
 t_fn <- 0
+t_treatment <- 0
+t_surveillance <- 0
 
-p.sens.test <- 
-p.spec.test <- 
+p.sens.test <- 0
+p.spec.test <- 0
 # TO DO: differentiate between mammo/us/mri
   
-# Parameters patient characteristics 
-d_pt_age <-
-d_LRR <-   #if time to recurrence is smaller than time past, LRR occurs
-d_DM <-   #if time to dm is smaller than time past, dm occurs 
+# Parameters imaging
+#probabilities during annual surveillance 
+#TO DO probs uitzoeken
+p.s.mammo <- 0.85
+p.s.us <- 0.10
+p.s.mri <- 0.05
+
+#probabilities during additional imaging
+#TO DO probs uitzoeken
+p.a.mammo <- 0.1
+p.a.us <- 0.80
+p.a.mri <- 0.1
+
+#TO DO costs uitzoeken
+c_mammo <- 0
+c_us <- 0
+c_mri <- 0
+c_pet <- 0
+c_biopsy <- 0 #dependent on image-guided?
+  
   
 
