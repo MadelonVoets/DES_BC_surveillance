@@ -87,11 +87,43 @@ p.a.us <- 0.80
 p.a.mri <- 0.1
 
 #TO DO costs uitzoeken
-c_mammo <- 0
-c_us <- 0
-c_mri <- 0
-c_pet <- 0
-c_biopsy <- 0 #dependent on image-guided?
-  
+c_mammo <- function(n){
+  cost <- rnorm(n, mean = 1, sd = 1)
+  return(cost)
+}
+c_us <- function(n){
+  cost <- rnorm(n, mean = 1, sd = 1)
+  return(cost)
+}
+c_mri <- function(n){
+  cost <- rnorm(n, mean = 1, sd = 1)
+  return(cost)
+}
+c_pet <- function(n){
+  cost <- rnorm(n, mean = 1, sd = 1)
+  return(cost)
+}
+c_biopsy <- function(n){
+  cost <- rnorm(n, mean = 1, sd = 1)
+  return(cost)
+} #dependent on image-guided?
+
+#treatment
+c_horm <- function(n){
+  cost <- rnorm(n, mean = 1, sd = 1)
+  return(cost)
+  }
+c_radio <- function(n){
+  cost <- rnorm(n, mean = 1, sd = 1)
+  return(cost)
+}
+c_chemo <- function(n){
+  cost <- rnorm(n, mean = 1, sd = 1)
+  return(cost)
+}
+c_MST <- function(n){
+  cost <- rnorm(n, mean = 1, sd = 1)
+  return(cost)
+}
   
 
