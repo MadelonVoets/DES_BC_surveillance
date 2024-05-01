@@ -10,26 +10,28 @@ out.trj <- trajectory() %>%
     )
   )
 
+# treatment (after positive biopsy) 
+treat.trj <- trajectory() %>%
+  seize(resource = "LRR.Treatment") %>%
+  set_attribute(keys=c("LRR_treat", "cost", "t_treat"), values=function() fn_treatment(horm = get_attribute(sim, "Horm"),
+                                                               sur = get_attribute(sim, "Sur"),
+                                                               chemo = get_attribute(sim, "Chemo")), mod = "+") %>%
+  timeout(task = function() (get_attribute(sim, "t_treat"))) %>%
+  release(resource = "LRR.Treatment") %>%
+  rollback(target=12, times=Inf)
+
 #symptomatic DM INCOMPLETE
 dm.trj <- trajectory() %>% 
-  set_attribute(
-    keys   = c("time_of_cs"), 
-    values = function() fn_time_to_events(
-      currenttime = now(.env = sim), 
-      attrb       = get_attribute(.env = sim, keys = c("start_time"))
-    ) 
-  ) %>%
   seize(resource = "WB.Imaging") %>%
   set_attribute(
     keys = c("mod", "cost"),
     values = function() 1, #always PET?
     mod = '+'
   ) %>%
-  timeout(task = t_wbimaging) %>%
+  timeout(task = function() round(rtnorm(1, mean = 1, sd = 1, a = 0, b = 7))) %>% #time between screening and result #TO DO VERIFY
   release(resource = "WB.Imaging")
+ 
 
-# treatment (after positive biopsy) INCOMPLETE
-treat.trj <- trajectory() 
 
 # MAIN TRAJECTORY 
 fup.trj <- trajectory() %>% 
@@ -71,17 +73,17 @@ fup.trj <- trajectory() %>%
   # 
   # set_attribute(keys = "start_time", values = function() now(.env = sim)) %>% 
   # #background mortality
-  # renege_in(t = function() now(.env = sim) + fn_days_death_oc(age = get_attribute(sim, "Age"), sex = get_attribute(sim, "Sex"), mortality_data), out = out.trj) %>%
+  renege_in(t = function() now(.env = sim) + fn_days_death_oc(age = get_attribute(sim, "Age"), sex = get_attribute(sim, "Sex"), mortality_data), out = out.trj) %>%
   # #symptomatic DM INCOMPLETE
-  # renege_in(t = function() now(.env = sim) + fn_days_symp_dm(1), out = dm.trj) %>%
+  renege_in(t = function() now(.env = sim) + fn_days_symp_dm(1), out = dm.trj) %>%
   # #symptomatic LRR INCOMPLETE
   # renege_in(t = function() now(.env = sim) + fn_days_symp_lrr(1), out = treat.trj) %>%
 
+  # Time to first imaging event
+  timeout(task = function() round(rtnorm(1, mean = 0, sd = 15.5, a = 0, b = Inf))) %>% #distribution to follow-up event, truncated to not be negative
+  
   #set_attribute(key="state", "DF") %>%
   set_attribute(key="state_DF", mod="+", value=function() 1) %>%
-  
-   # Time to first imaging event
-  timeout(task = function() round(rtnorm(1, mean = 0, sd = 15.5, a = 0, b = Inf))) %>% #distribution to follow-up event, truncated to not be negative
   
   #TO DO: insert counter years of surveillance
   set_attribute(key="surv.year", mod="+", value=function() 1) %>%
@@ -119,6 +121,7 @@ fup.trj <- trajectory() %>%
                   trajectory() %>%
                     seize(resource="TN", amount=1) %>% 
                     timeout(task = function() round(rtnorm(1, mean = 1, sd = 1, a = 0, b = 7))) %>% #time between imaging and result #TO DO VERIFY
+                    timeout(task = function() round(rtnorm(1, mean = 365, sd = 1, a = 0, b = 7))) %>% # 1 year?
                     release(resource="TN", amount=1) %>%
                     rollback(target=17, times=Inf),
             
@@ -130,6 +133,7 @@ fup.trj <- trajectory() %>%
                              seize(resource="FP", amount=1) %>%
                              set_attribute(keys = "cost", values = c_biopsy, mod = "+") %>% #TO DO from distribution?
                              timeout(task = function() round(rtnorm(1, mean = 1, sd = 1, a = 0, b = 7))) %>% #time between biopsy and result #TO DO VERIFY
+                             timeout(task = function() round(rtnorm(1, mean = 365, sd = 1, a = 0, b = 7))) %>% # 1 year?
                              release(resource="FP", amount=1) %>%
                              rollback(target=19, times=Inf),
                            
@@ -138,70 +142,48 @@ fup.trj <- trajectory() %>%
                              seize(resource="TP", amount=1) %>% 
                              set_attribute(keys = "cost", values = c_biopsy, mod = "+") %>% #TO DO from distribution
                              timeout(task = function() round(rtnorm(1, mean = 1, sd = 1, a = 0, b = 7))) %>% #time between biopsy and result #TO DO VERIFY
-                             release(resource="TP", amount=1)
+                             release(resource="TP", amount=1) 
+                             #PET to exclude DM?? (according to guideline)
+                             #join(treat.trj)
                     )
            ), 
          #Event 2: False Negative
          trajectory() %>%
            seize(resource="FN", amount=1) %>% 
-           timeout(task = t_img) %>%
+           timeout(task = round(rtnorm(1, mean = 1, sd = 1, a = 0, b = 7))) %>% #time between surveillance and result #TO DO VERIFY
            release(resource="FN", amount=1) %>%
            set_attribute(key="state_UU", values=1, mod = "+") %>%
-           #set_attribute(key="surv.year", mod="+", value=function() 1) %>%
            
-           branch(option = function() fn_img_event_UU(get_attribute(sim, "mod")), continue = c(T,T), #different fn_img_event function?? Denk het wel om van UU naar US te gaan // needs to be function that keeps track of time to move to state US
-                  #0 to skip branch to undetected symptomatic
-                  #undetected unsymptomatic UU
+           branch(option = function() now(.env = sim) < fn_days_symp_lrr(1), continue = c(T),
+                  #UNDETECTED UNSYMPTOMATIC UU -> reutrn to DF
                   trajectory() %>%
                     seize(resource="UU", amount=1) %>% 
-                    timeout(task = t_img) %>%
+                    timeout(task = round(rtnorm(1, mean = 1, sd = 1, a = 0, b = 7))) %>% #1 year?
                     release(resource="UU", amount=1) %>% 
-                    set_attribute(key="surv.year", mod="+", values = 1) %>%
-                    set_attribute(key="C", mod="+", value=function() 1) %>%
-                    set_attribute(key="E", mod="+", value=function() 1) %>%
-                    rollback(target=8),
-                  
-                  #undetected symptomatic
-                  trajectory() %>%
-                    seize(resource="US", amount=1) %>% 
-                    timeout(task = t_img) %>%
-                    release(resource="US", amount=1) %>% 
-                    set_attribute(key="surv.year", mod="+", values = 1) %>%
-                    set_attribute(key="C", mod="+", value=function() 1) %>%
-                    set_attribute(key="E", mod="+", value=function() 1) #what's better? Seize and release or set_attribute?
-                  #set_attribute(key="state_US", values=1, mod = "+")
+                    rollback(target=16) #to DF
+                  ) %>%
+         
+           #UNDETECTED SYMPTOMATIC
+           seize(resource="US", amount=1) %>% 
+           set_attribute(
+             keys = c("mod", "cost"),
+             values = function() fn_img_wb(),
+             mod = '+'
            ) %>%
+           timeout(task = function() round(rtnorm(1, mean = 1, sd = 1, a = 0, b = 7))) %>% #time between imaging and result #TO DO VERIFY
+           release(resource="US", amount=1) %>% 
            
-           #detected (un)symptomatic
-           set_attribute(key="state_DS", values=1, mod = "+") %>% 
-           branch(option=function() get_attribute(sim, "biopt.US"), continue=c(T,T), #different biopsy value?? #make it a function based on probability?
-                  #negative biopsy - should this even be possible?
-                  trajectory() %>%
-                    timeout(task = t_biopsy) %>%
-                    rollback(target=5),
-                  
-                  #positive biopsy = 
-                  trajectory() %>%  
-                    seize(resource="DS", amount=1) %>% 
-                    #set_attribute(key="state_DS", values = 1, mod = "+") %>%
-                    timeout(task = t_biopsy) %>% 
-                    release(resource="DS", amount=1) 
-           ) %>%
-           timeout(task = t_fn) 
+           #DETECTED SYMPTOMATIC 
+           seize(resource="DS", amount=1) %>% 
+           #assume 100% sens biopsy
+           set_attribute(keys = "cost", values = c_biopsy, mod = "+") %>% #TO DO from distribution?
+           timeout(task = function() round(rtnorm(1, mean = 1, sd = 1, a = 0, b = 7))) %>% #time between biopsy and result #TO DO VERIFY
+           release(resource="DS", amount=1) 
   ) %>%
-  seize(resource="Treatment", amount=1) 
-
            
-         
-  
-         
-         
-         
-      
-
-  
-#branch #rollback to DF or DM
-
+           #Join Treatment
+           join(treat.trj)
+        
  
 # Visualize 
 plot(fup.trj, fill = scales::brewer_pal("qual", palette = "Set1"))
@@ -210,5 +192,5 @@ plot(fup.trj, fill = scales::brewer_pal("qual", palette = "Set1"))
 model %>%
   export_svg() %>%
   charToRaw %>%
-  rsvg_pdf("graph.pdf")
+  rsvg_pdf("model_240430.pdf")
 
