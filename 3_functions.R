@@ -182,9 +182,66 @@ fn_biopsy <- function(result = 1){
   #1 = negative biopsy / FP
   #2 = positive biopsy / TP
   out <- ifelse(result == 1, 1, 
-                ifelse(result == 2, 2, "No correct biopsy reslt - CHECK"))
+                ifelse(result == 2, 2, "No correct biopsy result - CHECK"))
   return(out)
 }
+
+fn_treatment <- function(horm, sur, chemo) {
+#Date of biopsy to mastectomy: 2 to 6 weeks
+#Recovery from mastectomy alone: up to 3 weeks.
+#Length of post-surgery chemotherapy: 2 to 5 months.
+#Length of radiation therapy: 3 to 6.5 weeks (standard) or 5 days (brachytherapy)
+#2 years Horm  
+  if (horm == 0) {
+    if (sur == 1) {
+      if (chemo == 0) {
+        out <- 1 #"RC"
+        cost <- c_radio(1) + c_chemo(1)  # You need to define cost_R and cost_C
+        t <- 0
+      } else {
+        out <- 2 #"R"
+        cost <- c_radio(1)
+        t <- 0
+      }
+    } else {
+      if (chemo == 0) {
+        out <- 3 #"MC"
+        cost <- c_MST(1) + c_chemo(1)  # You need to define cost_M and cost_C
+        t <- 0
+      } else {
+        out <- 4 #"M"
+        cost <- c_MST(1)
+        t <- 0
+      }
+    }
+  } else {
+    if (sur == 1) {
+      if (chemo == 0) {
+        out <- 5 #"RCH"
+        cost <- c_radio(1) + c_chemo(1) + c_horm(1)  # You need to define cost_R, cost_C, and cost_H
+        t <- 0
+      } else {
+        out <- 6 #"RH"
+        cost <- c_radio(1) + c_horm(1)
+        t <- 0
+      }
+    } else {
+      if (chemo == 0) {
+        out <- 7 #"MCH"
+        cost <- c_MST(1) + c_chemo(1) + c_horm(1) # You need to define cost_M, cost_C, and cost_H
+        t <- 0
+      } else {
+        out <- 8 #"MH"
+        cost <- c_MST(1) + c_horm(1)
+        t <- 0
+      }
+    }
+  }
+  
+  return(c(out,cost,t))
+}
+
+
 
 #########################################################################
 
@@ -210,7 +267,13 @@ fn_add_img <- function(){
 # 1 = TN
 # 2 = TP / FP
 fn_add_img_event <- function(){
-  
+  return(out)
+}
+
+fn_img_wb <- function() {
+  #whole body imaging
+  out <- c(mode, cost)
+  return(out)
 }
 
 
