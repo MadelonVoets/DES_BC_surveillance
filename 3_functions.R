@@ -167,8 +167,8 @@ fn_img_mod <- function (mod = 0){
 
 #DETERMINE the IMAGING event based on fn_img_mod
 # 1 = TN
-# 2 = Suspicion -> additional imaging
-# 3 = FN 
+# 2 = Suspicion  / TP or FP 
+# 3 = FN
 fn_img_event <- function(V_0, t, vdt, sens, spec) {
   out <- if(fn_vdt(V_0, t, vdt) >= V_d){
     ifelse(runif(1) < sens, 2, 3)  # 1 = true positive, 0 = false negative
@@ -195,25 +195,23 @@ fn_cost_img <- function(mod){
   return(out)  
 }
 
-#### INCOMPLETE #####
-
-
- 
-fn_add_img <- function(){
-  mod <- 
-  
-  out <- c(mod, cost)    
-}
+#DETERMINE Additional imaging event - FN no longer possible 
 # 1 = TN
 # 2 = TP / FP
-fn_add_img_event <- function(){
-  return(out)
-}
-
-fn_img_wb <- function() {
-  #whole body imaging
-  out <- c(mode, cost)
-  return(out)
+# Assumption: FN is not possible
+fn_add_img_event <- function(sens, spec){
+  # Generate a random number between 0 and 1
+  rand_num <- runif(1)
+  if (rand_num < sens) {
+    # True Positive
+    return(2)
+  } else if (rand_num >= spec) {
+    # True Negative
+    return(1)
+  } else {
+    # False Positive
+    return(2)
+  }
 }
 
 #BIOPSY result to distinguish FP and TP. Assumes 100% sensitivity
@@ -225,6 +223,16 @@ fn_biopsy <- function(result = 1){
   return(out)
 }
 
+#Whole body imaging - include mammo as well?
+fn_img_wb <- function() {
+  #whole body imaging
+  out <- c_pet(1)
+  return(out)
+}
+
+#### INCOMPLETE #####
+
+#Treatment after LRR diagnosis
 fn_treatment <- function(horm, sur, chemo) {
   #Date of biopsy to mastectomy: 2 to 6 weeks
   #Recovery from mastectomy alone: up to 3 weeks.
