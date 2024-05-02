@@ -1,10 +1,25 @@
 ## 3. FUNCTIONS ----
+
+## COMPLETED ###
 #truncated normal distributions
 rtnorm <- function(n, mean, sd, a = -Inf, b = Inf){
   qnorm(runif(n, pnorm(a, mean, sd), pnorm(b, mean, sd)), mean, sd)
 }
 
-#PATIENT AGE
+#update to include impact QALYs, costs etc
+fn_time_to_events <- function(currentime, attrb) {
+  # currenttime         simulation time
+  # attrb               vector with times of death other causes, time of lrr, time of dm (time of bc death?)
+  
+  time_start <- attrb[1]
+  time_of_death <- currenttime
+  
+  out <- c(time_of_death-time_start)
+  
+  return(out)
+}
+
+#Patient characteristics
 #<60 0 | 60-69 1 | 70-79 2 | >= 80 3
 fn_age <- function() {                           
   age <- rtnorm(1, mean = m.age, sd = sd.age, a = 18, b = 100)
@@ -12,45 +27,52 @@ fn_age <- function() {
   #-1 to have values 0,1,2,3 instead of 1,2,3,4
   return(c(age, age.grp))
 }
-
 #Patient Sex (100% women) 1 = female, 0 = male
 fn_sex <- function() {
   sex <- ifelse(runif(1)<p.female, 1, 0);
   return(sex)
 }
+#Tumour grade
 fn_grade <- function() {
   grade <- sample(0:2, 1, replace = TRUE, prob = c(p.gr1, p.gr2, p.gr3))
   return(grade)
 }
-
+#Tumour stage
 fn_stage <- function() {
   stage <- sample(0:2, 1, replace = TRUE, prob = c(p.st1, p.st2, p.st3))
     return(stage)
 }
+#Patient nodal status
 fn_nstatus <- function() {
   nstatus <- sample(0:3, 1, replace = TRUE, prob = c(p.n0, p.n1, p.n2, p.n3))
     return(nstatus)
 }
+#Tumour multifocality
 fn_multif <- function() {
   multif <- ifelse(runif(1) < p.multi.y, 1, 0)
     return(multif)
 }
+#Pirmary surgery BCS or MST
 fn_sur <- function() {
   sur <- ifelse(runif(1) < p.mst, 1, 0)
     return(sur)
 }
+#Chemotherapy yes or no
 fn_chemo <- function() {
   chemo <- ifelse(runif(1) < p.chemo.y, 1, 0) 
   return(chemo)
 }
+#Radiotherapy yes or no
 fn_radio <- function() {
   radio <- ifelse(runif(1) < p.rt.y, 1, 0) 
     return(radio)
 }
+#Hormonal status and therapy
 fn_horm <- function() {
   horm <- sample(0:2, 1, replace = TRUE, prob = c(p.hr.n, p.hr.y.ther.n, p.hr.y.ther.y))
     return(horm)
 }
+#HER2 status and therapy
 fn_antiher2 <- function() {
   antiher2 <- sample(0:2, 1, replace = TRUE, prob = c(p.her2.n, p.her2.y.ther.n, p.her2.y.ther.y))
     return(antiher2)
@@ -66,45 +88,23 @@ fn_risk <- function(vector, matrix = inf_matrix, rec) {
     } else if (rec == 2) {
       return(matching_row[18:22])
     } else {
-      stop("Invalid value. It should be either 1 (LRR) or 2 (DM).")
+      stop("Invalid value. Type should be either 1 (LRR) or 2 (DM).")
     }
   } else {
-    return(NULL) # No exact match found
+    return(NULL) # No exact match found - which should not be possible
   }
 }
-#When cumulative (13:17) and when conditional (23:27) risk? (LRR)
 
-#DETERMINE in which YEAR RECURRENCE occurs
-#input risk_vector is output fn_risk()
-# fn_time_to_LRR <- function(risk_vector) {
-#   # Generate a random number to determine if recurrence happens in any year
-#   yearly_risks <- risk_vector #* runif(5) #introduce extra randomness?
-#   
-#   # Check which year (if any) recurrence occurs
-#   recurrence_year <- which(yearly_risks > runif(1))
-#   
-#   if (length(recurrence_year) == 0) {
-#     # No recurrence during the follow-up period
-#     return(0)  # A value greater than 5 indicates no recurrence during follow-up
-#   } else {
-#     # Recurrence happens; return the first year of recurrence
-#     #return(min(recurrence_year)) #in years or in days?
-#     return(min(recurrence_year*365))
-#   }
-# }
-
-#DETERMINE in which YEAR DM occurs
+#DETERMINE in which YEAR DM/LRR occurs
 fn_t_to_tumour <- function(risk_vector) {
   # Check which year (if any) recurrence occurs
-  dm_year <- which(risk_vector > runif(1))
-  
-  if (length(dm_year) == 0) {
-    # No dm during the follow-up period
+  recurrence_year <- which(risk_vector > runif(1))
+  if (length(recurrence_year) == 0) {
+    # No dm/lrr during the follow-up period
     return(0)  # A value greater than 5 indicates no dm during follow-up
   } else {
     # DM happens; return the first year of recurrence
-    #return(min(dm_year)) 
-    return(min(dm_year*365)) #in years or in days?
+    return(min(recurrence_year*365)) #return in days
   }
 }
 
@@ -112,10 +112,8 @@ fn_t_to_tumour <- function(risk_vector) {
 fn_days_death_oc <- function(age, sex, mortality_data) {
   # Get the probability of dying for the given age and sex
   prob_death <- mortality_data[age-17, 2+sex]
-  
   # Simulate death event based on probability
   death_event <- rbinom(1, 1, prob_death)
-  
   if (death_event == 1) {
     # Individual dies
     return((age-18)*365)
@@ -125,56 +123,97 @@ fn_days_death_oc <- function(age, sex, mortality_data) {
   }
 }
 
-fn_time_to_events <- function(currentime, attrb) {
-  # currenttime         simulation time
-  # attrb               vector with times of death other causes, time of lrr, time of dm (time of bc death?)
-  
-  time_start <- attrb[1]
-  time_of_death <- currenttime
-  
-  out <- c(time_start, time_of_death)
-  
-  return(out)
-}
-
-#Truncated normal sampler a = min, b = max
-#mean.nrom.vdt
-#sd.norm.vdt
+#Truncated normal sampler for vdt, a = min, b = max
 fn_trnorm <- function(n, mean, sd, vdt_min = 1, vdt_max = Inf){
   qnorm(runif(n, pnorm(vdt_min, mean, sd), pnorm(vdt_max, mean, sd)), mean, sd)
 }
 
-#volume doubling time 
+#Determine min-max range for volume doubling time 
 fn_minmax <- function(V_t, V_0, t_min, t_max) {
   vdt_min <- t_min * log(2) / log(V_t / V_0)
   vdt_max <- t_max * log(2) / log(V_t / V_0)
   return(c(vdt_min, vdt_max))
 }
 
+#Determine tumour volume at time t
 fn_vdt <- function(V_0, t, vdt) {
   V_t <- V_0 * 2^(t / vdt)
   return(V_t)
 }
 
+#Solve for t - determine t tumour passes detection threshold
 fn_t <- function(V_t, V_0, vdt) {
   t <- vdt * log(V_t / V_0) / log(2)
   return(t)
 }
 
-#DETERMINE the IMAGING MODALITY and associated COSTS
-fn_img_mod <- function (mod = 0, at = NULL){
-  #mammo
-  if(mod == 1){
-    
-  }
-  #mri
-  
-  #US
-  
-  #PET/CT
-  out <- c(mod, cost)
+#DETERMINE the IMAGING MODALITY SENS & SPEC
+fn_img_mod <- function (mod = 0){
+  #mammo = 0
+  if(mod == 0){
+    sens <- p.sens.mammo
+    spec <- p.spec.mammo
+  } else if(mod == 1){ #US = 1
+    sens <- p.sens.us
+    spec <- p.spec.us
+  } else if(mod == 2){ #MRI = 2
+      sens <- p.sens.mri
+      spec <- p.spec.mri
+    }
+  out <- c(mod, cost, sens, spec)
   
   return(out)  
+}
+
+#DETERMINE the IMAGING event based on fn_img_mod
+# 1 = TN
+# 2 = Suspicion -> additional imaging
+# 3 = FN 
+fn_img_event <- function(V_0, t, vdt, sens, spec) {
+  out <- if(fn_vdt(V_0, t, vdt) >= V_d){
+    ifelse(runif(1) < sens, 2, 3)  # 1 = true positive, 0 = false negative
+  } else if(fn_vdt(V_0, t, vdt) < V_d){
+    out <- ifelse(runif(1) < (1 - p.spec.test), 2, 1)      # 1 = false positive, 0 = true negative
+  } else{
+    return("Something's up - check")
+  }
+  return(out)
+}
+
+#COST of imaging mammo, us and mri
+fn_cost_img <- function(mod){
+  #mammo = 0
+  if(mod == 1){
+    cost <- c_mammo(1)
+  } else if(mod == 2){ #US = 1
+    cost <- c_us(1)
+  } else if(mod == 3){ #MRI = 2
+    cost <- c_mri(1)
+  }
+  out <- c(cost)
+  
+  return(out)  
+}
+
+#### INCOMPLETE #####
+
+
+ 
+fn_add_img <- function(){
+  mod <- 
+  
+  out <- c(mod, cost)    
+}
+# 1 = TN
+# 2 = TP / FP
+fn_add_img_event <- function(){
+  return(out)
+}
+
+fn_img_wb <- function() {
+  #whole body imaging
+  out <- c(mode, cost)
+  return(out)
 }
 
 #BIOPSY result to distinguish FP and TP. Assumes 100% sensitivity
@@ -187,11 +226,11 @@ fn_biopsy <- function(result = 1){
 }
 
 fn_treatment <- function(horm, sur, chemo) {
-#Date of biopsy to mastectomy: 2 to 6 weeks
-#Recovery from mastectomy alone: up to 3 weeks.
-#Length of post-surgery chemotherapy: 2 to 5 months.
-#Length of radiation therapy: 3 to 6.5 weeks (standard) or 5 days (brachytherapy)
-#2 years Horm  
+  #Date of biopsy to mastectomy: 2 to 6 weeks
+  #Recovery from mastectomy alone: up to 3 weeks.
+  #Length of post-surgery chemotherapy: 2 to 5 months.
+  #Length of radiation therapy: 3 to 6.5 weeks (standard) or 5 days (brachytherapy)
+  #2 years Horm  
   if (horm == 0) {
     if (sur == 1) {
       if (chemo == 0) {
@@ -241,39 +280,11 @@ fn_treatment <- function(horm, sur, chemo) {
   return(c(out,cost,t))
 }
 
-
-
-#########################################################################
-
-#DETERMINE the IMAGING event based on fn_img_mod
-# 1 = Suspicion -> additional imaging
-# 2 = FN 
-fn_img_event <- function() {
-  out <-  ifelse(d_LRR == 1,
-                 ifelse(runif(1) < p.sens.test, 1, 0),                   # 1 = true positive, 0 = false negative
-                 ifelse(d_LRR == 0,
-                        ifelse(runif(1) < (1 - p.spec.test), 1, 0),      # 1 = false positive, 0 = true negative
-                        0)) 
-  out <- c(result, num)
+fn_nc_treatment <- function() {
+  out <- 0
   return(out)
 }
 
- 
-fn_add_img <- function(){
-  mod <- 
-  
-  out <- c(mod, cost)    
-}
-# 1 = TN
-# 2 = TP / FP
-fn_add_img_event <- function(){
-  return(out)
-}
 
-fn_img_wb <- function() {
-  #whole body imaging
-  out <- c(mode, cost)
-  return(out)
-}
 
 
