@@ -57,21 +57,15 @@ d_t <- 5                                      #detection threshold (mm)
 
 V_d <-((4/3)*pi*(d_t/2)^3)/1000               #volume in cm^3 based on diameter in mm
 V_0 <-((4/3)*pi*(d_0/2)^3)/1000               #volume in cm^3 based on diameter in mm
-#t_min <- fn_time_to_LRR() - 365               #year of recurrence -1 * 365
-#t_max <- fn_time_to_LRR()                     #year of recurrence * 365
-  
-#duration parameters
-t_first_fup <- rnorm(1, mean = 0, sd = 15.5)  #between x and y days #how to handle adherence? 
-t_fup <- 0  
-t_img <- 0
-t_biopsy <- 0
-t_fn <- 0
-t_treatment <- 0
-t_surveillance <- 0
 
-p.sens.test <- 0
-p.spec.test <- 0
-# TO DO: differentiate between mammo/us/mri
+#imaging sensitivities and specificities
+p.sens.mammo <- 0
+p.spec.mammo <- 0
+p.sens.us <- 0
+p.spec.us <- 0
+p.sens.mri <- 0
+p.spec.mri <- 0
+# TO DO: mammo/us/mri sens en spec
   
 # Parameters imaging
 #probabilities during annual surveillance 
@@ -88,41 +82,41 @@ p.a.mri <- 0.1
 
 #TO DO costs uitzoeken
 c_mammo <- function(n){
-  cost <- rnorm(n, mean = 1, sd = 1)
+  cost <- round(rnorm(n, mean = 1, sd = 1))
   return(cost)
 }
 c_us <- function(n){
-  cost <- rnorm(n, mean = 1, sd = 1)
+  cost <- round(rnorm(n, mean = 1, sd = 1))
   return(cost)
 }
 c_mri <- function(n){
-  cost <- rnorm(n, mean = 1, sd = 1)
+  cost <- round(rnorm(n, mean = 1, sd = 1))
   return(cost)
 }
 c_pet <- function(n){
-  cost <- rnorm(n, mean = 1, sd = 1)
+  cost <- round(rnorm(n, mean = 1, sd = 1))
   return(cost)
 }
 c_biopsy <- function(n){
-  cost <- rnorm(n, mean = 1, sd = 1)
+  cost <- round(rnorm(n, mean = 1, sd = 1))
   return(cost)
 } #dependent on image-guided?
 
 #treatment
 c_horm <- function(n){
-  cost <- rnorm(n, mean = 1, sd = 1)
+  cost <- round(rnorm(n, mean = 1, sd = 1))
   return(cost)
   }
 c_radio <- function(n){
-  cost <- rnorm(n, mean = 1, sd = 1)
+  cost <- round(rnorm(n, mean = 1, sd = 1))
   return(cost)
 }
 c_chemo <- function(n){
-  cost <- rnorm(n, mean = 1, sd = 1)
+  cost <- round(rnorm(n, mean = 1, sd = 1))
   return(cost)
 }
 c_MST <- function(n){
-  cost <- rnorm(n, mean = 1, sd = 1)
+  cost <- round(rnorm(n, mean = 1, sd = 1))
   return(cost)
 }
   
