@@ -102,7 +102,7 @@ c_biopsy <- function(n){
   return(cost)
 } #dependent on image-guided?
 
-#treatment
+#treatment costs
 c_horm <- function(n){
   cost <- round(rnorm(n, mean = 1, sd = 1))
   return(cost)
@@ -119,5 +119,47 @@ c_MST <- function(n){
   cost <- round(rnorm(n, mean = 1, sd = 1))
   return(cost)
 }
-  
+#treatment timeouts
+t_horm <- function(n){
+  timeout <- round(rnorm(n, mean = 1, sd = 1))
+  return(timeout)
+}
+t_radio <- function(n){
+  timeout <- round(rnorm(n, mean = 1, sd = 1))
+  return(timeout)
+}
+t_chemo <- function(n){
+  timeout <- round(rnorm(n, mean = 1, sd = 1))
+  return(timeout)
+}
+t_MST <- function(n){
+  timeout <- round(rnorm(n, mean = 1, sd = 1))
+  return(timeout)
+}
+#Parameters DM
+p.oligo <- 0.165
+p.noligo <- 0.835
+
+#therapy oligo
+p.o.l.rt <- 0.28
+p.o.s.horm <- 0.43
+p.o.s.chemo <- 0.12
+p.o.s.ch.tar <- 0.06
+p.o.s.tar <- 0.33
+p.o.s.n <- 0.06
+#therapy non-oligo (oligo3 study)
+p.l.rt <- 0.30
+p.s.horm <- 0.57
+p.s.chemo <- 0.07
+p.s.ch.tar <- 0.05
+p.s.tar <- 0.27
+p.s.n <- 0.04
+#survival oligo dm (<3)
+oligo.scale = 0.9248594
+oligo.coef = 7.434267 
+#survival dm (>3)
+dm.scale = 0.8820885
+dm.coef = 7.089314 
+
+
 

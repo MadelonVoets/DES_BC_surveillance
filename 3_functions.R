@@ -230,8 +230,6 @@ fn_img_wb <- function() {
   return(out)
 }
 
-#### INCOMPLETE #####
-
 #Treatment after LRR diagnosis
 fn_treatment <- function(horm, sur, chemo) {
   #Date of biopsy to mastectomy: 2 to 6 weeks
@@ -244,21 +242,21 @@ fn_treatment <- function(horm, sur, chemo) {
       if (chemo == 0) {
         out <- 1 #"RC"
         cost <- c_radio(1) + c_chemo(1)  # You need to define cost_R and cost_C
-        t <- 0
+        t <- t_radio(1) + t_chemo(1)
       } else {
         out <- 2 #"R"
         cost <- c_radio(1)
-        t <- 0
+        t <- t_radio(1)
       }
     } else {
       if (chemo == 0) {
         out <- 3 #"MC"
         cost <- c_MST(1) + c_chemo(1)  # You need to define cost_M and cost_C
-        t <- 0
+        t <- t_MST(1) + t_chemo(1)
       } else {
         out <- 4 #"M"
         cost <- c_MST(1)
-        t <- 0
+        t <- t_MST(1)
       }
     }
   } else {
@@ -266,21 +264,21 @@ fn_treatment <- function(horm, sur, chemo) {
       if (chemo == 0) {
         out <- 5 #"RCH"
         cost <- c_radio(1) + c_chemo(1) + c_horm(1)  # You need to define cost_R, cost_C, and cost_H
-        t <- 0
+        t <- t_radio(1) + t_chemo(1) + t_horm(1) 
       } else {
         out <- 6 #"RH"
         cost <- c_radio(1) + c_horm(1)
-        t <- 0
+        t <- t_radio(1) + t_horm(1)
       }
     } else {
       if (chemo == 0) {
         out <- 7 #"MCH"
         cost <- c_MST(1) + c_chemo(1) + c_horm(1) # You need to define cost_M, cost_C, and cost_H
-        t <- 0
+        t <- t_MST(1) + t_chemo(1) + t_horm(1)
       } else {
         out <- 8 #"MH"
         cost <- c_MST(1) + c_horm(1)
-        t <- 0
+        t <- t_MST(1) + t_horm(1)
       }
     }
   }
@@ -288,9 +286,42 @@ fn_treatment <- function(horm, sur, chemo) {
   return(c(out,cost,t))
 }
 
-fn_nc_treatment <- function() {
-  out <- 0
-  return(out)
+#days until death whilst on non-curative treatment
+fn_day_death_bc <- function(type) {
+  if(type == 1){
+    t <- rweibull(1, shape = oligo.scale, scale = exp(oligo.coef))
+  } else if(type == 2){
+    t <- rweibull(1, shape = dm.scale, scale = exp(dm.coef))
+  } else {
+    return("Something's up - check")
+  }
+  return(t)
+}
+
+#### INCOMPLETE #####
+
+#type, cost and timeout for non curative treatment
+#TO DO INCLUDE time and costs
+fn_nc_treatment <- function(her2, hr) {
+  if (type==1) {
+    ther <- sample(0:4, 1, replace = TRUE, prob = c(p.o.s.horm, p.o.s.ch.tar, p.o.s.chemo, p.o.s.tar, p.o.s.n))
+    ther <- ifelse(runif(1)<p.o.l.rt, ther+5,ther) #plus local therapy
+  } else{
+    if(her2 > 0){
+      if(hr >0){  
+        ther <- ifelse(runif(1)<p.s.horm, 10, 11) #10 = horm, 11= target + chemo
+        ther <- ifelse(runif(1)<p.l.rt, ther+2,ther)#plus local therapy 12/13
+      } else{
+        ther <- 11 #target+chemo
+        ther <- ifelse(runif(1)<p.l.rt, ther+2,ther) #plus local therapy (13)
+      }
+    } else{
+      ther <- 14 #chemo
+      ther <- ifelse(runif(1)<p.l.rt, ther+1,ther) #plus local therapy
+    }
+  }
+  cost <- 0
+  return(ther, cost)
 }
 
 

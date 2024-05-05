@@ -42,46 +42,46 @@ dm.trj <- trajectory() %>%
 # MAIN TRAJECTORY 
 fup.trj <- trajectory() %>% 
   #patient characteristics
-  # set_attribute(key="Sex", value=function() fn_sex()) %>%
-  # set_attribute(key=c("Age","A.grp"), value=function() fn_age()) %>%
-  # set_attribute(key="Grade", value=function() fn_grade()) %>%
-  # set_attribute(key="Stage", value=function() fn_stage()) %>%
-  # set_attribute(key="Nstatus", value=function() fn_nstatus()) %>%
-  # set_attribute(key="Multif", value=function() fn_multif()) %>%
-  # set_attribute(key="Sur", value=function() fn_sur()) %>%
-  # set_attribute(key="Chemo", value=function() fn_chemo()) %>%
-  # set_attribute(key="Radio", value=function() fn_radio()) %>%
-  # set_attribute(key="Horm", value=function() fn_horm()) %>%
-  # set_attribute(key="Antiher2", value=function() fn_antiher2()) %>%
-  # 
-  # set_attribute(key="t_LRR", value=function() fn_t_to_tumour(fn_risk(vector = c(get_attribute(sim, "A.grp"),
-  #                                                                               get_attribute(sim, "Grade"),
-  #                                                                               get_attribute(sim, "Stage"),
-  #                                                                               get_attribute(sim, "Nstatus"),
-  #                                                                               get_attribute(sim, "Multif"),
-  #                                                                               get_attribute(sim, "Sur"),
-  #                                                                               get_attribute(sim, "Chemo"),
-  #                                                                               get_attribute(sim, "Radio"),
-  #                                                                               get_attribute(sim, "Horm"),
-  #                                                                               get_attribute(sim, "Antiher2")), rec=1))) %>%
-  # set_attribute(key="t_DM", value=function() fn_t_to_tumour(fn_risk(vector = c(get_attribute(sim, "A.grp"),
-  #                                                                              get_attribute(sim, "Grade"),
-  #                                                                              get_attribute(sim, "Stage"),
-  #                                                                              get_attribute(sim, "Nstatus"),
-  #                                                                              get_attribute(sim, "Multif"),
-  #                                                                              get_attribute(sim, "Sur"),
-  #                                                                              get_attribute(sim, "Chemo"),
-  #                                                                              get_attribute(sim, "Radio"),
-  #                                                                              get_attribute(sim, "Horm"),
-  #                                                                              get_attribute(sim, "Antiher2")), rec=2))) %>%
-  # set_attribute(key="vdt_lrr", value=function() fn_trnorm(1, mean.norm.vdt, sd.norm.vdt,
-  #                                                        fn_minmax(V_d, V_0, t_LRR = get_attribute(sim,"t_LRR") - 365, t_LRR = get_attribute(sim,"t_LRR"))[1],
-  #                                                        fn_minmax(V_d, V_0, t_LRR = get_attribute(sim,"t_LRR") - 365, t_LRR = get_attribute(sim,"t_LRR"))[2])) %>%
-  # set_attribute(key="vdt_dm", value=function() fn_trnorm(1, mean.norm.vdt, sd.norm.vdt,
-  #                                                         fn_minmax(V_d, V_0, t_DM = get_attribute(sim,"t_DM") - 365, t_DM = get_attribute(sim,"t_DM"))[1],
-  #                                                         fn_minmax(V_d, V_0, t_DM = get_attribute(sim,"t_DM") - 365, t_DM = get_attribute(sim,"t_DM"))[2])) %>%
-  # set_attribute(keys = "start_surveillance", values = function() now(.env = sim)) %>%
-  # #background mortality
+  set_attribute(key="Sex", value=function() fn_sex()) %>%
+  set_attribute(key=c("Age","A.grp"), value=function() fn_age()) %>%
+  set_attribute(key="Grade", value=function() fn_grade()) %>%
+  set_attribute(key="Stage", value=function() fn_stage()) %>%
+  set_attribute(key="Nstatus", value=function() fn_nstatus()) %>%
+  set_attribute(key="Multif", value=function() fn_multif()) %>%
+  set_attribute(key="Sur", value=function() fn_sur()) %>%
+  set_attribute(key="Chemo", value=function() fn_chemo()) %>%
+  set_attribute(key="Radio", value=function() fn_radio()) %>%
+  set_attribute(key="Horm", value=function() fn_horm()) %>%
+  set_attribute(key="Antiher2", value=function() fn_antiher2()) %>%
+
+  set_attribute(key="t_LRR", value=function() fn_t_to_tumour(fn_risk(vector = c(get_attribute(sim, "A.grp"),
+                                                                                get_attribute(sim, "Grade"),
+                                                                                get_attribute(sim, "Stage"),
+                                                                                get_attribute(sim, "Nstatus"),
+                                                                                get_attribute(sim, "Multif"),
+                                                                                get_attribute(sim, "Sur"),
+                                                                                get_attribute(sim, "Chemo"),
+                                                                                get_attribute(sim, "Radio"),
+                                                                                get_attribute(sim, "Horm"),
+                                                                                get_attribute(sim, "Antiher2")), rec=1))) %>%
+  set_attribute(key="t_DM", value=function() fn_t_to_tumour(fn_risk(vector = c(get_attribute(sim, "A.grp"),
+                                                                               get_attribute(sim, "Grade"),
+                                                                               get_attribute(sim, "Stage"),
+                                                                               get_attribute(sim, "Nstatus"),
+                                                                               get_attribute(sim, "Multif"),
+                                                                               get_attribute(sim, "Sur"),
+                                                                               get_attribute(sim, "Chemo"),
+                                                                               get_attribute(sim, "Radio"),
+                                                                               get_attribute(sim, "Horm"),
+                                                                               get_attribute(sim, "Antiher2")), rec=2))) %>%
+  set_attribute(key="vdt_lrr", value=function() fn_trnorm(1, mean.norm.vdt, sd.norm.vdt,
+                                                         fn_minmax(V_d, V_0, t_LRR = get_attribute(sim,"t_LRR") - 365, t_LRR = get_attribute(sim,"t_LRR"))[1],
+                                                         fn_minmax(V_d, V_0, t_LRR = get_attribute(sim,"t_LRR") - 365, t_LRR = get_attribute(sim,"t_LRR"))[2])) %>%
+  set_attribute(key="vdt_dm", value=function() fn_trnorm(1, mean.norm.vdt, sd.norm.vdt,
+                                                          fn_minmax(V_d, V_0, t_DM = get_attribute(sim,"t_DM") - 365, t_DM = get_attribute(sim,"t_DM"))[1],
+                                                          fn_minmax(V_d, V_0, t_DM = get_attribute(sim,"t_DM") - 365, t_DM = get_attribute(sim,"t_DM"))[2])) %>%
+  set_attribute(keys = "start_surveillance", values = function() now(.env = sim)) %>%
+  #background mortality
   renege_in(t = function() now(.env = sim) + fn_days_death_oc(age = get_attribute(sim, "Age"), sex = get_attribute(sim, "Sex"), mortality_data), out = out.trj) %>%
   # #symptomatic DM INCOMPLETE
   #renege_in(t = function() now(.env = sim) + fn_days_symp_dm(1), out = dm.trj) %>%
