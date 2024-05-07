@@ -324,6 +324,12 @@ fn_nc_treatment <- function(her2, hr) {
   return(ther, cost)
 }
 
+#probability of survival probability (remaining asymptomatic). 1-probability is probability of symptomatic disease at vdt,dfi
+#dfi since diagnosis!! -> time when tumour passes the detection threshold
+fn_symp_prob <- function(vdt,dfi){
+  p <- 1- as.numeric(curve_cont(data=df_patient, variable="vdt", model=model, horizon=c(vdt), times=c(dfi))[2])
+  return(p)
+}
 
 
 
