@@ -8,9 +8,10 @@ library(simmer);                 #Version 4.4.6.3
 library(simmer.plot);            #Version 0.1.18
 library(dplyr);                  #Version 1.1.4
 library(rsvg);                   #Version 2.6.0
-#library(readxl)
 library(readr)
+library(contsurvplot)
 #library(DiagrammeRsvg)
+#library(readxl)
 
 sessionInfo()
 
@@ -33,3 +34,6 @@ for (col_name in names(nkr_variables)) {
   # Assign the column as a separate object in the environment
   assign(col_name, nkr_variables[[col_name]])
 }
+
+#Load NCR follow-up data symptomatic LRR
+load("data_AEP.Rda")
