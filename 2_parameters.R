@@ -59,26 +59,32 @@ V_d <-((4/3)*pi*(d_t/2)^3)/1000               #volume in cm^3 based on diameter 
 V_0 <-((4/3)*pi*(d_0/2)^3)/1000               #volume in cm^3 based on diameter in mm
 
 #imaging sensitivities and specificities
-p.sens.mammo <- 0
-p.spec.mammo <- 0
-p.sens.us <- 0
-p.spec.us <- 0
-p.sens.mri <- 0
-p.spec.mri <- 0
+#MRI provided an overall sensitivity and specificity of 94.6% (range 85.7%–100%) and 74.2% (range 25%–100%) respectively, 
+#while mammography showed that the overall sensitivity was at 54.5% (range 27%–86.8%) and specificity was 85.5% (range 62.9%–98.8%). 
+#The overall sensitivity and specificity of ultrasound was 67.2% (range 26.9%–87.5%) and 76.8% (range 18.8%–96.9%). https://doi.org/10.1016/j.radi.2022.01.006
+
+p.sens.mammo <- 0.75 #https://doi.org/10.2214/AJR.20.24204,  https://doi.org/10.1148/radiol.2019182394
+p.spec.mammo <- 0.90
+p.sens.dbt <- 0
+p.spec.dbt <- 0
+p.sens.us <- 0.80 #https://doi.org/10.1200/JGO.19.00127
+p.spec.us <- 0.88
+p.sens.mri <- 0.95
+p.spec.mri <- 0.74
 # TO DO: mammo/us/mri sens en spec
   
 # Parameters imaging
 #probabilities during annual surveillance 
 #TO DO probs uitzoeken
-p.s.mammo <- 0.85
-p.s.us <- 0.10
-p.s.mri <- 0.05
+p.s.mammo <- 0
+p.s.us <- 0.
+p.s.mri <- 0
 
 #probabilities during additional imaging
 #TO DO probs uitzoeken
-p.a.mammo <- 0.1
-p.a.us <- 0.80
-p.a.mri <- 0.1
+p.a.mammo <- 0
+p.a.us <- 0
+p.a.mri <- 0
 
 #TO DO costs uitzoeken
 c_mammo <- function(n){
@@ -119,6 +125,11 @@ c_MST <- function(n){
   cost <- round(rnorm(n, mean = 1, sd = 1))
   return(cost)
 }
+
+c_tar <- function(n){
+  cost <- round(rnorm(n, mean = 1, sd = 1))
+  return(cost)
+}
 #treatment timeouts
 t_horm <- function(n){
   timeout <- round(rnorm(n, mean = 1, sd = 1))
@@ -136,28 +147,32 @@ t_MST <- function(n){
   timeout <- round(rnorm(n, mean = 1, sd = 1))
   return(timeout)
 }
-#Parameters DM
+t_tar <- function(n){
+  timeout <- round(rnorm(n, mean = 1, sd = 1))
+  return(timeout)
+}
+#Parameters probabilities of DM or oligo disease
 p.oligo <- 0.165
 p.noligo <- 0.835
 
-#therapy oligo
+#Probabilities type of therapy  for oligo
 p.o.l.rt <- 0.28
 p.o.s.horm <- 0.43
 p.o.s.chemo <- 0.12
 p.o.s.ch.tar <- 0.06
 p.o.s.tar <- 0.33
 p.o.s.n <- 0.06
-#therapy non-oligo (oligo3 study)
+#Probabilities type of therapy non-oligo (oligo3 study)
 p.l.rt <- 0.30
 p.s.horm <- 0.57
 p.s.chemo <- 0.07
 p.s.ch.tar <- 0.05
 p.s.tar <- 0.27
 p.s.n <- 0.04
-#survival oligo dm (<3)
+#survival parameters oligo dm (<3)
 oligo.scale = 0.9248594
 oligo.coef = 7.434267 
-#survival dm (>3)
+#survival parameters dm (>3)
 dm.scale = 0.8820885
 dm.coef = 7.089314 
 
