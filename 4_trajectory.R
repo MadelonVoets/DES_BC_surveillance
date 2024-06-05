@@ -22,21 +22,25 @@ treat.trj <- trajectory() %>%
 
 #symptomatic DM INCOMPLETE
 dm.trj <- trajectory() %>% 
+  set_attribute(key="type.dm", value = function() ifelse(runif(1) < p.oligo, 1, 2)) #1 oligo , 2 dm
   seize(resource = "WB.Imaging") %>%
   set_attribute(
     keys = c("mod", "cost"),
-    values = function() 1, #always PET
+    values = function() 1, #always PET?
     mod = '+'
   ) %>%
+  renege_in(t = function() now(.env = sim) + fn_day_death_bc(type = get_attribute(sim, "type.dm"), out = set_attribute(key="Death_BC", values=1))) %>%
   timeout(task = function() round(rtnorm(1, mean = 1, sd = 1, a = 0, b = 7))) %>% #time between screening and result #TO DO VERIFY
   release(resource = "WB.Imaging") %>%
   #non-curative / palliative care
   seize(resource = "NC-treatment") %>%
+  set_attribute(
+    keys = c("ther", "cost"),
+    values = function() fn_nc_treatment(her2 = get_attribute(sim, "Antiher2"), hr = get_attribute(sim,"Horm")),
+    mod = "+" ) %>%
   timeout(task = function() 1) %>% #TO DO VERIFY fn_nc_treatment
   release(resource = "NC-treatment") %>%
-  #Breast cancer Death
-  set_attribute(key="Death_BC", values=1) 
-  #End of simulation
+  wait() #wait until patient dies, either background mortality or bc death
 
  
 # MAIN TRAJECTORY 
@@ -80,6 +84,11 @@ fup.trj <- trajectory() %>%
   set_attribute(key="vdt_dm", value=function() fn_trnorm(1, mean.norm.vdt, sd.norm.vdt,
                                                           fn_minmax(V_d, V_0, t_DM = get_attribute(sim,"t_DM") - 365, t_DM = get_attribute(sim,"t_DM"))[1],
                                                           fn_minmax(V_d, V_0, t_DM = get_attribute(sim,"t_DM") - 365, t_DM = get_attribute(sim,"t_DM"))[2])) %>%
+  
+  #does patient become symptomatic or is lrr detected at routine interval?
+  set_attribute(key = "t_symp_lrr", value=function() fn_days_symptomatic(vdt = get_attribute(sim, "vdt_lrr"), dfi = get_attribute(sim, ""), data = df_patient, model = symp_cox_model)) %>%
+  
+  
   set_attribute(keys = "start_surveillance", values = function() now(.env = sim)) %>%
   #background mortality
   renege_in(t = function() now(.env = sim) + fn_days_death_oc(age = get_attribute(sim, "Age"), sex = get_attribute(sim, "Sex"), mortality_data), out = out.trj) %>%
