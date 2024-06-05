@@ -10,6 +10,7 @@ library(dplyr);                  #Version 1.1.4
 library(rsvg);                   #Version 2.6.0
 library(readr)
 library(contsurvplot)
+library(survival)
 #library(DiagrammeRsvg)
 #library(readxl)
 
@@ -37,3 +38,6 @@ for (col_name in names(nkr_variables)) {
 
 #Load NCR follow-up data symptomatic LRR
 load("data_AEP.Rda")
+
+#symptomatic LRR 
+symp_cox_model <- coxph(Surv(time = dfi, event = symp) ~ vdt, data=df_patient, x=T)
