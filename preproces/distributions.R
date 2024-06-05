@@ -303,6 +303,7 @@ library(ggplot2)
 library(ggfortify)
 library(survminer)
 
+library(dplyr)
 df_patient <- df_patient %>% 
   mutate(symp = na_if(symp, 99))
 
@@ -406,6 +407,8 @@ df_patient <- df_patient %>%
 #add VDT
 df_patient <- df_patient %>%
   mutate(vdt = dfi * log(2) / log(V_t / V_0))
+df_patient <- na.omit(df_patient)
+save(df_patient,file="data_AEP.Rda")
 
 ## o determine the likelihood of a recurrence becoming symptomatic given a past time
 # Fit Cox proportional hazards model
@@ -441,7 +444,7 @@ cox_model <- coxph(Surv(dfi, symp) ~ vdt, data = subset)
 original_survival <- survfit(cox_model)
 
 # Fit Weibull survival model
-weibull_model <- survreg(Surv(dfi, symp) ~ vdt + dfi, data = subset, dist = "weibull")
+weibull_model <- survreg(Surv(dfi, symp) ~ vdt, data = subset, dist = "weibull")
 
 # Fit Exponential survival model
 exp_model <- survreg(Surv(dfi, symp) ~ vdt + dfi, data = subset, dist = "exponential")
@@ -465,13 +468,170 @@ aic_values <- AIC(weibull_model, exp_model, lognormal_model)
 best_model <- names(aic_values)[which.min(aic_values)]
 
 # Estimate survival probability at dfi using the best-fitting model
-survival_prob <- predict(weibull_model, type = "response", newdata = data.frame(vdt = 60, dfi = 365))
+survival_prob <- predict(weibull_model, type = "response", newdata = data.frame(vdt = 30, dfi = 1100))
 
 # Calculate likelihood of symptomatic recurrence at dfi
 likelihood_symptomatic <- 1 - pweibull(survival_prob, shape = 1/(weibull_model$scale), scale = exp(weibull_model$coefficients))
 
 # Print likelihood
 print(likelihood_symptomatic*100)
+
+
+
+
+###
+#https://cran.r-project.org/web/packages/contsurvplot/vignettes/introduction.html
+#install.packages("contsurvplot")
+library(contsurvplot)
+library(ggplot2)
+library(dplyr)
+library(rlang)
+library(riskRegression)
+library(survival)
+library(pammtools) #not installed
+library(gganimate)
+library(transformr)
+library(plotly) #not installed
+library(reshape2) 
+library(knitr)
+library(rmarkdown)
+
+model <- coxph(Surv(time = dfi, event = symp) ~ vdt, data=df_patient, x=T)
+curve_cont(data=df_patient, variable="vdt", model=model,
+           horizon=c(10, 50, 120), times=c(500, 1500))
+#horizon: A numeric vector containing a range of values of variable for which the survival curves should be calculated
+#times: A numeric vector containing points in time at which the survival probabilities should be calculated
+
+
+plot_surv_at_t(time="dfi",
+               status="symp",
+               variable="vdt",
+               data=subset,
+               model=model,
+               t=850)
+
+plot_surv_at_t(time="dfi",
+               status="symp",
+               variable="vdt",
+               data=df_patient,
+               model=model,
+               t=c(400, 700, 900, 1200, 1500))
+
+plot_surv_quantiles(time="dfi",
+                    status="symp",
+                    variable="vdt",
+                    data=df_patient,
+                    model=model,
+                    p=0.5)
+
+plot_surv_quantiles(time="dfi",
+                    status="symp",
+                    variable="vdt",
+                    data=df_patient,
+                    model=model,
+                    p=c(0.1, 0.25, 0.5, 0.75, 0.9))
+
+#single curves different vdt
+plot_surv_lines(time="dfi",
+                    status="symp",
+                    variable="vdt",
+                    data=df_patient,
+                    model=model,
+                    horizon=c(50))
+
+#survival area
+plot_surv_area(time="dfi",
+                status="symp",
+                variable="vdt",
+                data=df_patient,
+                model=model)
+#survival area discrete
+plot_surv_area(time="dfi",
+               status="symp",
+               variable="vdt",
+               data=df_patient,
+               model=model,
+               discrete=T,
+               bins=5,
+               start_color = "lightgrey",
+               end_color="black")
+#survival heatmap
+plot_surv_heatmap(time="dfi",
+               status="symp",
+               variable="vdt",
+               data=df_patient,
+               model=model,
+               start_color = "blue",
+               end_color="red")
+#survival heatmap with contour lines
+plot_surv_heatmap(time="dfi",
+                  status="symp",
+                  variable="vdt",
+                  data=df_patient,
+                  model=model,
+                  contour_lines = T,
+                  start_color = "blue",
+                  end_color="red")
+#survival contours
+plot_surv_contour(time="dfi",
+                  status="symp",
+                  variable="vdt",
+                  data=df_patient,
+                  model=model,
+                  bins=5)
+#survival Matrix
+plot_surv_matrix(time="dfi",
+                  status="symp",
+                  variable="vdt",
+                  data=df_patient,
+                  model=model)
+
+#restricted mean survival time
+plot_surv_rmst(time="dfi",
+               status="symp",
+               variable="vdt",
+               data=df_patient,
+               model=model,
+               tau=c(1100))
+
+
+#### Not based on VDT but size a diagnosis
+model2 <- coxph(Surv(time = dfi, event = symp) ~ size, data=subset, x=T)
+
+#restricted mean survival time
+plot_surv_rmst(time="dfi",
+               status="symp",
+               variable="size",
+               data=subset,
+               model=model2,
+               tau=c(365, 730, 1095, 1460, 1825))
+
+##
+symp.prob <- function(vdt,dfi){
+  p <- as.numeric(curve_cont(data=df_patient, variable="vdt", model=model, horizon=c(vdt), times=c(dfi))[2])
+  return(p)
+}
+
+
+a <- plot_surv_3Dsurface(time="dfi",
+                    status="symp",
+                    variable="vdt",
+                    data=df_patient,
+                    model=model,
+                    interactive=T)
+
+#survival heatmap with contour lines
+p <- plot_surv_heatmap(time="dfi",
+                  status="symp",
+                  variable="vdt",
+                  data=df_patient,
+                  model=model,
+                  contour_lines = T,
+                  start_color = "blue",
+                  end_color="red")
+p + ggtitle("Survival Heatmap") + labs(y = "Volume Doubling Time (days)", x = "Disease Free Interval (days)")
+
+
 
 
 
