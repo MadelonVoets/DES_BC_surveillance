@@ -376,8 +376,7 @@ fn_nc_treatment <- function(her2, hr) {
 
 
 
-#### INCOMPLETE #####
-
+## SYMPTOMATIC DISEASE ## ----
 #time to symptoms
 fn_days_symptomatic <- function(vdt, data, model) {
   dfi <- fn_t(V_t, V_0, vdt) #t when tumour passes detection threshold and can become symptomatic
@@ -401,4 +400,4 @@ fn_symp_prob <- function(vdt,dfi, data, model){
   return(p)
 }
 
-
+#### INCOMPLETE #####
