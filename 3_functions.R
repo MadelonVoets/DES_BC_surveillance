@@ -1,9 +1,14 @@
 ## 3. FUNCTIONS ----
 
 ## COMPLETED ###
-#truncated normal distributions
+#truncated normal distributions ----
 rtnorm <- function(n, mean, sd, a = -Inf, b = Inf){
   qnorm(runif(n, pnorm(a, mean, sd), pnorm(b, mean, sd)), mean, sd)
+}
+
+#Truncated normal sampler for vdt, a = min, b = max
+fn_trnorm <- function(n, mean, sd, vdt_min = 1, vdt_max = Inf){
+  qnorm(runif(n, pnorm(vdt_min, mean, sd), pnorm(vdt_max, mean, sd)), mean, sd)
 }
 
 #update to include impact QALYs, costs etc
@@ -19,7 +24,7 @@ fn_time_to_events <- function(currentime, attrb) {
   return(out)
 }
 
-#Patient characteristics
+## PATIENT CHARACTERISTICS ## ----
 #<60 0 | 60-69 1 | 70-79 2 | >= 80 3
 fn_age <- function() {                           
   age <- rtnorm(1, mean = m.age, sd = sd.age, a = 18, b = 100)
@@ -108,6 +113,7 @@ fn_t_to_tumour <- function(risk_vector) {
   }
 }
 
+## MORTALITY FUNCTIONS ## ----
 #Background mortality
 fn_days_death_oc <- function(age, sex, mortality_data) {
   # Get the probability of dying for the given age and sex
@@ -123,11 +129,19 @@ fn_days_death_oc <- function(age, sex, mortality_data) {
   }
 }
 
-#Truncated normal sampler for vdt, a = min, b = max
-fn_trnorm <- function(n, mean, sd, vdt_min = 1, vdt_max = Inf){
-  qnorm(runif(n, pnorm(vdt_min, mean, sd), pnorm(vdt_max, mean, sd)), mean, sd)
+#days until death whilst on non-curative treatment = BC DEATH
+fn_day_death_bc <- function(type) {
+  if(type == 1){
+    t <- rweibull(1, shape = oligo.scale, scale = exp(oligo.coef))
+  } else if(type == 2){
+    t <- rweibull(1, shape = dm.scale, scale = exp(dm.coef))
+  } else {
+    return("Something's up - check")
+  }
+  return(t)
 }
 
+## VDT FUNCTIONS ## ----
 #Determine min-max range for volume doubling time 
 fn_minmax <- function(V_t, V_0, t_min, t_max) {
   vdt_min <- t_min * log(2) / log(V_t / V_0)
@@ -147,6 +161,7 @@ fn_t <- function(V_t, V_0, vdt) {
   return(t)
 }
 
+## IMAGING FUNCTIONS ## ----
 #DETERMINE the IMAGING MODALITY SENS & SPEC
 fn_img_mod <- function (mod = 0){
   #mammo = 0
@@ -180,21 +195,6 @@ fn_img_event <- function(V_0, t, vdt, sens, spec) {
   return(out)
 }
 
-#COST of imaging mammo, us and mri
-fn_cost_img <- function(mod){
-  #mammo = 0
-  if(mod == 1){
-    cost <- c_mammo(1)
-  } else if(mod == 2){ #US = 1
-    cost <- c_us(1)
-  } else if(mod == 3){ #MRI = 2
-    cost <- c_mri(1)
-  }
-  out <- c(cost)
-  
-  return(out)  
-}
-
 #DETERMINE Additional imaging event - FN no longer possible 
 # 1 = TN
 # 2 = TP / FP
@@ -224,12 +224,76 @@ fn_biopsy <- function(result = 1){
 }
 
 #Whole body imaging - include mammo as well?
-fn_img_wb <- function() {
+fn_img_dm <- function() {
   #whole body imaging
-  out <- c_pet(1)
+  mod <- 0
+  cost <- c_pet(1)
+  
+  out <- c(mod, cost) 
   return(out)
 }
 
+## COST FUNCTION ## ----
+#COST of imaging mammo, us and mri
+fn_cost_img <- function(mod){
+  #mammo = 0
+  if(mod == 1){
+    cost <- c_mammo(1)
+  } else if(mod == 2){ #US = 1
+    cost <- c_us(1)
+  } else if(mod == 3){ #MRI = 2
+    cost <- c_mri(1)
+  }
+  out <- c(cost)
+  
+  return(out)  
+}
+
+#cost of nc_treatment
+#TO DO: for now kept oligo and non-oligo therapy separated in case of different costs
+#TO DO: include timeout??
+fn_cost_nc_treatment <- function(nc_ther) {
+  # Initialize cost variable
+  cost <- 0
+  if (nc_ther == 0) {
+    cost <- c_horm
+  } else if (nc_ther == 1) {
+    cost <- c_chemo + c_tar
+  } else if (nc_ther == 2) {
+    cost <- c_chemo
+  } else if (nc_ther == 3) {
+    cost <- c_tar
+  } else if (nc_ther == 4) {
+    cost <- 0
+  } else if (nc_ther == 5) {
+    cost <- c_horm + c_rt
+  } else if (nc_ther == 6) {
+    cost <- c_chemo + c_tar + c_rt
+  } else if (nc_ther == 7) {
+    cost <- c_chemo + c_rt
+  } else if (nc_ther == 8) {
+    cost <- c_tar + c_rt
+  } else if (nc_ther == 9) {
+    cost <- 0 + c_rt
+  } else if (nc_ther == 10) {
+    cost <- c_horm
+  } else if (nc_ther == 11) {
+    cost <- c_chemo + c_tar
+  } else if (nc_ther == 12) {
+    cost <- c_horm + c_rt
+  } else if (nc_ther == 13) {
+    cost <- c_chemo + c_tar + c_rt
+  } else if (nc_ther == 14) {
+    cost <- c_chemo
+  } else if (nc_ther == 15) {
+    cost <- c_chemo + c_rt
+  } else {
+    stop("Invalid input: should be value between 0 and 15")
+  }
+  return(cost)
+}
+
+## TREATMENT FUNCTIONS ## ----
 #Treatment after LRR diagnosis
 fn_treatment <- function(horm, sur, chemo) {
   #Date of biopsy to mastectomy: 2 to 6 weeks
@@ -286,22 +350,8 @@ fn_treatment <- function(horm, sur, chemo) {
   return(c(out,cost,t))
 }
 
-#days until death whilst on non-curative treatment
-fn_day_death_bc <- function(type) {
-  if(type == 1){
-    t <- rweibull(1, shape = oligo.scale, scale = exp(oligo.coef))
-  } else if(type == 2){
-    t <- rweibull(1, shape = dm.scale, scale = exp(dm.coef))
-  } else {
-    return("Something's up - check")
-  }
-  return(t)
-}
-
-#### INCOMPLETE #####
-
 #type, cost and timeout for non curative treatment
-#TO DO INCLUDE time and costs
+#TO DO INCLUDE costs
 fn_nc_treatment <- function(her2, hr) {
   if (type==1) {
     ther <- sample(0:4, 1, replace = TRUE, prob = c(p.o.s.horm, p.o.s.ch.tar, p.o.s.chemo, p.o.s.tar, p.o.s.n))
@@ -320,16 +370,35 @@ fn_nc_treatment <- function(her2, hr) {
       ther <- ifelse(runif(1)<p.l.rt, ther+1,ther) #plus local therapy
     }
   }
-  cost <- 0
+  cost <- fn_cost_nc_treatment(ther)
   return(ther, cost)
+}
+
+
+
+#### INCOMPLETE #####
+
+#time to symptoms
+fn_days_symptomatic <- function(vdt, data, model) {
+  dfi <- fn_t(V_t, V_0, vdt) #t when tumour passes detection threshold and can become symptomatic
+  # Get the probability of dying for the given age and sex
+  prob_symp <- fn_symp_prob(vdt, dfi, data, model)
+  # Simulate death event based on probability
+  symp_event <- rbinom(1, 1, prob_symp)
+  if (symp_event == 1) {
+    # Individual dies
+    return(dfi)
+  } else {
+    # Individual has no symptoms yet, increment dfi and check again
+    return(fn_days_symptomatic(vdt, dfi + 30, data, model))
+  }
 }
 
 #probability of survival probability (remaining asymptomatic). 1-probability is probability of symptomatic disease at vdt,dfi
 #dfi since diagnosis!! -> time when tumour passes the detection threshold
-fn_symp_prob <- function(vdt,dfi){
-  p <- 1- as.numeric(curve_cont(data=df_patient, variable="vdt", model=model, horizon=c(vdt), times=c(dfi))[2])
+fn_symp_prob <- function(vdt,dfi, data, model){
+  p <- 1- as.numeric(curve_cont(data=data, variable="vdt", model=model, horizon=c(vdt), times=c(dfi))[2])
   return(p)
 }
-
 
 
