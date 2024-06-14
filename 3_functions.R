@@ -380,7 +380,7 @@ fn_days_symptomatic <- function(vdt, data, model, t = 0) {
   #time when tumour passes detection threshold and can become symptomatic
   dfi <- fn_t(V_d, V_0, vdt) 
   t_thres <- t + dfi
-  message(paste('ok made it this far with t=',t_thres))
+  #message(paste('ok made it this far with t=',t_thres))
   # Get the probability of dying for the given age and sex
   prob_symp <- fn_symp_prob(vdt, t_thres, data, model)
   # Simulate death event based on probability
@@ -401,4 +401,62 @@ fn_symp_prob <- function(vdt,dfi, data, model){
   return(p)
 }
 
+# Function to determine if symptomatic detection or routine visit happens first
+fn_detection_type_static <- function(dfi, t_symp) {
+  if (dfi == 0) {
+    return(0) # No recurrence detected
+  } else {
+    # Filter the visit times that are after dfi
+    #static times
+    valid_visits <- visit_times[visit_times > dfi]
+    
+    # If there are no valid visits, set closest_visit to Inf
+    closest_visit <- if (length(valid_visits) == 0) Inf else min(valid_visits)
+    
+    # Determine if symptomatic detection or routine visit is closer
+    if (t_symp < closest_visit) {
+      return(1) # Symptomatic detection
+    } else {
+      return(2) # Routine visit
+    }
+  }
+}
+
+# Function to determine if symptomatic detection or routine visit happens first
+fn_detection_type_dyn <- function(dfi, t_symp, mean = 15.5, sd = 10, n_visits = 6) {
+  # Generate dynamic visit times
+  original_visit_times <- c(0, 365, 730, 1095, 1460, 1825)
+  visit_times <- original_visit_times + round(rtnorm(n_visits, mean = mean, sd = sd, a = 0, b = Inf))
+  
+  if (dfi == 0) {
+    return(0) # No recurrence detected
+  } else {
+    # Filter the visit times that are after dfi
+    #dystatic times
+    valid_visits <- visit_times[visit_times > dfi]
+    
+    # If there are no valid visits, set closest_visit to Inf
+    closest_visit <- if (length(valid_visits) == 0) Inf else min(valid_visits)
+    
+    # Determine if symptomatic detection or routine visit is closer
+    if (t_symp < closest_visit) {
+      return(1) # Symptomatic detection
+    } else {
+      return(2) # Routine visit
+    }
+  }
+}
+
+# Function to generate dynamic visit times
+fn_dynamic_visits <- function(original_times, mean = 15.5, sd = 10, n = length(original_times)) {
+  # Generate truncated normal samples
+  trunc_norm_samples <- round(rtnorm(n, mean = mean, sd = sd, a = 0, b = Inf))
+  
+  # Add truncated normal samples to original visit times
+  dynamic_visit_times <- original_times + trunc_norm_samples
+  
+  return(dynamic_visit_times)
+}
+
 #### INCOMPLETE #####
+
