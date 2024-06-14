@@ -87,68 +87,76 @@ p.a.us <- 0
 p.a.mri <- 0
 
 #TO DO costs uitzoeken
-c_mammo <- function(n){
-  cost <- round(rnorm(n, mean = 1, sd = 1))
+c_poli <- function(n.pat=1){
+  cost <- round(rtnorm(n.pat, mean = 120, sd = 0, a = 0), digits = 2)
+  return(cost)}
+
+#cost conventional OR, per minute
+c_or <- function(n.pat=1){
+  cost <- round(rtnorm(n.pat, mean = 11.09, sd = 0, a = 0), digits = 2)
+  return(cost)}
+
+c_mammo <- function(n.pat=1){
+  cost <- round(rtnorm(n.pat, mean = 82.17, sd = 0, a = 0), digits = 2)
   return(cost)
 }
-c_us <- function(n){
-  cost <- round(rnorm(n, mean = 1, sd = 1))
+c_us <- function(n.pat=1){
+  cost <- round(rtnorm(n.pat, mean = 95.80, sd = 0, a = 0), digits = 2)
   return(cost)
 }
-c_mri <- function(n){
-  cost <- round(rnorm(n, mean = 1, sd = 1))
+c_mri <- function(n.pat=1){
+  cost <- round(rtnorm(n.pat, mean = 267, sd = 0, a = 0), digits = 2) #267 bew. gem. 271 bov ext
   return(cost)
 }
-c_pet <- function(n){
-  cost <- round(rnorm(n, mean = 1, sd = 1))
+c_pet <- function(n.pat=1){
+  cost <- round(rtnorm(n.pat, mean = 971, sd = 0, a = 0), digits = 2)
   return(cost)
 }
-c_biopsy <- function(n){
-  cost <- round(rnorm(n, mean = 1, sd = 1))
+c_biopsy <- function(n.pat=1){
+  cost <- round(rtnorm(n.pat, mean = 161.09, sd = 4.01 , a = 0), digits = 2) #zilveren kruis 2023
   return(cost)
 } #dependent on image-guided?
 
 #treatment costs
-c_horm <- function(n){
-  cost <- round(rnorm(n, mean = 1, sd = 1))
+c_horm <- function(n.pat=1){
+  cost <- round(rtnorm(n.pat, mean = 1, sd = 1, a = 0), digits = 2)
   return(cost)
   }
-c_radio <- function(n){
-  cost <- round(rnorm(n, mean = 1, sd = 1))
+c_radio <- function(n.pat=1){
+  cost <- round(rtnorm(n.pat, mean = 1, sd = 1, a = 0), digits = 2)
   return(cost)
 }
-c_chemo <- function(n){
-  cost <- round(rnorm(n, mean = 1, sd = 1))
+c_chemo <- function(n.pat=1){
+  cost <- round(rtnorm(n.pat, mean = 1, sd = 1, a = 0), digits = 2)
   return(cost)
 }
-c_MST <- function(n){
-  cost <- round(rnorm(n, mean = 1, sd = 1))
+c_MST <- function(n.pat=1){
+  cost <- round(rtnorm(n.pat, mean = 1, sd = 1, a = 0), digits = 2)
   return(cost)
 }
-
-c_tar <- function(n){
-  cost <- round(rnorm(n, mean = 1, sd = 1))
+c_tar <- function(n.pat=1){
+  cost <- round(rtnorm(n.pat, mean = 1, sd = 1, a = 0), digits = 2)
   return(cost)
 }
 #treatment timeouts
-t_horm <- function(n){
-  timeout <- round(rnorm(n, mean = 1, sd = 1))
+t_horm <- function(n.pat=1){
+  timeout <- round(rtnorm(n.pat, mean = 1, sd = 1, a = 0))
   return(timeout)
 }
-t_radio <- function(n){
-  timeout <- round(rnorm(n, mean = 1, sd = 1))
+t_radio <- function(n.pat=1){
+  timeout <- round(rtnorm(n.pat, mean = 1, sd = 1, a = 0))
   return(timeout)
 }
-t_chemo <- function(n){
-  timeout <- round(rnorm(n, mean = 1, sd = 1))
+t_chemo <- function(n.pat=1){
+  timeout <- round(rtnorm(n.pat, mean = 1, sd = 1, a = 0))
   return(timeout)
 }
-t_MST <- function(n){
-  timeout <- round(rnorm(n, mean = 1, sd = 1))
+t_MST <- function(n.pat=1){
+  timeout <- round(rtnorm(n.pat, mean = 1, sd = 1, a = 0))
   return(timeout)
 }
-t_tar <- function(n){
-  timeout <- round(rnorm(n, mean = 1, sd = 1))
+t_tar <- function(n.pat=1){
+  timeout <- round(rtnorm(n.pat, mean = 1, sd = 1, a = 0))
   return(timeout)
 }
 #Parameters probabilities of DM or oligo disease
