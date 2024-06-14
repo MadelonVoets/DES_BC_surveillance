@@ -26,60 +26,60 @@ fn_time_to_events <- function(currentime, attrb) {
 
 ## PATIENT CHARACTERISTICS ## ----
 #<60 0 | 60-69 1 | 70-79 2 | >= 80 3
-fn_age <- function() {                           
-  age <- rtnorm(1, mean = m.age, sd = sd.age, a = 18, b = 100)
+fn_age <- function(n.pat=1) {                           
+  age <- rtnorm(n.pat, mean = m.age, sd = sd.age, a = 18, b = 100)
   age.grp <- cut(age, breaks = c(-Inf, 60, 70, 80, Inf), labels = FALSE, right = FALSE) - 1 
   #-1 to have values 0,1,2,3 instead of 1,2,3,4
   return(c(age, age.grp))
 }
 #Patient Sex (100% women) 1 = female, 0 = male
-fn_sex <- function() {
-  sex <- ifelse(runif(1)<p.female, 1, 0);
+fn_sex <- function(n.pat=1) {
+  sex <- ifelse(runif(n.pat)<p.female, 1, 0);
   return(sex)
 }
 #Tumour grade
-fn_grade <- function() {
-  grade <- sample(0:2, 1, replace = TRUE, prob = c(p.gr1, p.gr2, p.gr3))
+fn_grade <- function(n.pat=1) {
+  grade <- sample(0:2, n.pat, replace = TRUE, prob = c(p.gr1, p.gr2, p.gr3))
   return(grade)
 }
 #Tumour stage
-fn_stage <- function() {
-  stage <- sample(0:2, 1, replace = TRUE, prob = c(p.st1, p.st2, p.st3))
+fn_stage <- function(n.pat=1) {
+  stage <- sample(0:2, n.pat, replace = TRUE, prob = c(p.st1, p.st2, p.st3))
     return(stage)
 }
 #Patient nodal status
-fn_nstatus <- function() {
-  nstatus <- sample(0:3, 1, replace = TRUE, prob = c(p.n0, p.n1, p.n2, p.n3))
+fn_nstatus <- function(n.pat=1) {
+  nstatus <- sample(0:3, n.pat, replace = TRUE, prob = c(p.n0, p.n1, p.n2, p.n3))
     return(nstatus)
 }
 #Tumour multifocality
-fn_multif <- function() {
-  multif <- ifelse(runif(1) < p.multi.y, 1, 0)
+fn_multif <- function(n.pat=1) {
+  multif <- ifelse(runif(n.pat) < p.multi.y, 1, 0)
     return(multif)
 }
 #Pirmary surgery BCS or MST
-fn_sur <- function() {
-  sur <- ifelse(runif(1) < p.mst, 1, 0)
+fn_sur <- function(n.pat=1) {
+  sur <- ifelse(runif(n.pat) < p.mst, 1, 0)
     return(sur)
 }
 #Chemotherapy yes or no
-fn_chemo <- function() {
-  chemo <- ifelse(runif(1) < p.chemo.y, 1, 0) 
+fn_chemo <- function(n.pat=1) {
+  chemo <- ifelse(runif(n.pat) < p.chemo.y, 1, 0) 
   return(chemo)
 }
 #Radiotherapy yes or no
-fn_radio <- function() {
-  radio <- ifelse(runif(1) < p.rt.y, 1, 0) 
+fn_radio <- function(n.pat=1) {
+  radio <- ifelse(runif(n.pat) < p.rt.y, 1, 0) 
     return(radio)
 }
 #Hormonal status and therapy
-fn_horm <- function() {
-  horm <- sample(0:2, 1, replace = TRUE, prob = c(p.hr.n, p.hr.y.ther.n, p.hr.y.ther.y))
+fn_horm <- function(n.pat=1) {
+  horm <- sample(0:2, n.pat, replace = TRUE, prob = c(p.hr.n, p.hr.y.ther.n, p.hr.y.ther.y))
     return(horm)
 }
 #HER2 status and therapy
-fn_antiher2 <- function() {
-  antiher2 <- sample(0:2, 1, replace = TRUE, prob = c(p.her2.n, p.her2.y.ther.n, p.her2.y.ther.y))
+fn_antiher2 <- function(n.pat=1) {
+  antiher2 <- sample(0:2, n.pat, replace = TRUE, prob = c(p.her2.n, p.her2.y.ther.n, p.her2.y.ther.y))
     return(antiher2)
 }
 
@@ -156,7 +156,7 @@ fn_vdt <- function(V_0, t, vdt) {
 }
 
 #Solve for t - determine t tumour passes detection threshold
-fn_t <- function(V_t, V_0, vdt) {
+fn_t <- function(V_t = V_d, V_0, vdt) {
   t <- vdt * log(V_t / V_0) / log(2)
   return(t)
 }
@@ -224,7 +224,7 @@ fn_biopsy <- function(result = 1){
 }
 
 #Whole body imaging - include mammo as well?
-fn_img_dm <- function() {
+fn_img_wb <- function() {
   #whole body imaging
   mod <- 0
   cost <- c_pet(1)
@@ -238,11 +238,11 @@ fn_img_dm <- function() {
 fn_cost_img <- function(mod){
   #mammo = 0
   if(mod == 1){
-    cost <- c_mammo(1)
+    cost <- c_mammo()
   } else if(mod == 2){ #US = 1
-    cost <- c_us(1)
+    cost <- c_us()
   } else if(mod == 3){ #MRI = 2
-    cost <- c_mri(1)
+    cost <- c_mri()
   }
   out <- c(cost)
   
@@ -374,22 +374,23 @@ fn_nc_treatment <- function(her2, hr) {
   return(ther, cost)
 }
 
-
-
 ## SYMPTOMATIC DISEASE ## ----
 #time to symptoms
-fn_days_symptomatic <- function(vdt, data, model) {
-  dfi <- fn_t(V_t, V_0, vdt) #t when tumour passes detection threshold and can become symptomatic
+fn_days_symptomatic <- function(vdt, data, model, t = 0) {
+  #time when tumour passes detection threshold and can become symptomatic
+  dfi <- fn_t(V_d, V_0, vdt) 
+  t_thres <- t + dfi
+  message(paste('ok made it this far with t=',t_thres))
   # Get the probability of dying for the given age and sex
-  prob_symp <- fn_symp_prob(vdt, dfi, data, model)
+  prob_symp <- fn_symp_prob(vdt, t_thres, data, model)
   # Simulate death event based on probability
   symp_event <- rbinom(1, 1, prob_symp)
   if (symp_event == 1) {
     # Individual dies
-    return(dfi)
+    return(t_thres)
   } else {
     # Individual has no symptoms yet, increment dfi and check again
-    return(fn_days_symptomatic(vdt, dfi + 30, data, model))
+    return(fn_days_symptomatic(vdt, data, model, t + 30))
   }
 }
 
