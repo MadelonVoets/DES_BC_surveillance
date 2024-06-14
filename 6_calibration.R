@@ -196,5 +196,59 @@ prop.table(table(test$t.LRR))
 #check "oligo.R"
 
 ## VDT // SYMPTOMATIC CALIBRATION 
+#test$t_det <- ifelse(test$vdt_lrr == 0, 0, fn_days_symptomatic(vdt = test$vdt_lrr, data = df_patient, model = symp_cox_model))
+
+#time to symptoms
+test$t_symp <- mapply(function(vdt) {
+  if (vdt == 0) {
+    return(0)
+  } else {
+    return(fn_days_symptomatic(vdt, data = df_patient, model = symp_cox_model))
+  }
+}, test$vdt_lrr)
+
+#time to pass detection threshold
+test$dfi <- mapply(function(vdt) {
+  if (vdt == 0) {
+    return(0)
+  } else {
+    return(fn_t(V_d, V_0, vdt))
+  }
+}, test$vdt_lrr)
+
+#SYMPTOMATIC OR ROUTINE VISIT
+# Define the scheduled hospital visit times
+visit_times <- c(0, 365, 730, 1095, 1460, 1825)
+
+# DYNAMIC ROUTINE VISITS (ADHERENCE)
+# Original static visit times
+routine_visit_times <- c(0, 365, 730, 1095, 1460, 1825)
+
+# Generate dynamic visit times
+dynamic_visit_times <- fn_dynamic_visits(routine_visit_times)
+
+# Apply the function to each row in the dataframe
+test$detection_type <- mapply(fn_detection_type, test$dfi, test$t_symp) #, routine_visit_times)
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
 
 
