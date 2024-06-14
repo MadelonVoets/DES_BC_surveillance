@@ -184,5 +184,8 @@ oligo.coef = 7.434267
 dm.scale = 0.8820885
 dm.coef = 7.089314 
 
+#Routine visits 
+routine_visit_times <- c(0, 365, 730, 1095, 1460, 1825)
+
 
 
