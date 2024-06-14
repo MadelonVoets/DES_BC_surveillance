@@ -1,295 +1,302 @@
 # Load packages
 library(survival);  # Fit Survival Models
 library(EnvStats);  # Q-Q Plot for censored data
-
-#time = time between start follow-up and first event
-#event = follow-up moment
-
-# Distributions considered
-dist.considered <- c("exponential", 
-                     "weibull", 
-                     "logistic", 
-                     "lognormal");
-
-# Data for first-line
-df.RWD <- df;
-
-# Select distribution
-dist.performance <- sapply(dist.considered, function(dist) {
-  
-  # Fit survival model for distribution
-  model <- survreg(formula=Surv(time=, event=) ~ 1, data=df.RWD, dist=dist);
-  
-  # Return the likelihood
-  return(model$loglik[1]);
-  
-});
-
-# Print the results and which distribution would be selected based on the likelihood
-dist.selected <- dist.considered[which.max(dist.performance)];
-print(dist.performance);
-
-# Plot the survival curves
-for(i in 1:length(dist.considered)) {
-  
-  # Get distribution type
-  dist <- dist.considered[i];
-  
-  # Fit survival model for distribution
-  model <- survreg(formula=Surv(time=, event=) ~ 1, data=df.RWD, dist=dist);
-  
-  # If it is the first distribution considered, plot kaplan-meier
-  if(i==1) plot(survfit(Surv(time=, event=) ~ 1, data=df.RWD), conf.int=F, xlab="Time to follow-up event (days)", lwd=2);
-  
-  # Plot fitted distribution
-  lines(y=seq(.99, .01, by=-.01), x=predict(model, type="quantile", p=seq(.01, .99, by=.01))[1,], col=rainbow(length(dist.considered))[i], lwd=2)
-  
-  # Add the legend if it is the last distribution
-  if(i==length(dist.considered)) legend("right", legend=dist.considered, col=rainbow(length(dist.considered)), lty=1, lwd=2);
-  
-} 
-
-# Plot the Q-Q Plots curves
-par(mfrow=c(2,2));
-for(i in 1:length(dist.considered)) {
-  
-  # Get distribution type
-  dist <- dist.considered[i];
-  
-  # Fit survival model for distribution
-  model <- survreg(formula=Surv(time=, event=) ~ 1, data=df.RWD, dist=dist);
-  
-  # Plot the Q-Q Plot
-  if(dist=="exponential") qqPlotCensored(x=df.RWD$ , censored=df.RWD$ ==0, censoring.side="right", 
-                                         equal.axes=T, main=paste0("Q-Q Plot for the ", dist, " distribution"),
-                                         distribution="exp", param.list=list(rate=1/exp(model$coefficients)));
-  if(dist=="weibull") qqPlotCensored(x=df.RWD$ , censored=df.RWD$ ==0, censoring.side="right", 
-                                     equal.axes=T, main=paste0("Q-Q Plot for the ", dist, " distribution"), 
-                                     distribution="weibull", param.list=list(shape=1/model$scale, scale=exp(model$coefficients)));
-  if(dist=="logistic") qqPlotCensored(x=df.RWD$ , censored=df.RWD$ ==0, censoring.side="right", 
-                                      equal.axes=T, main=paste0("Q-Q Plot for the ", dist, " distribution"), 
-                                      distribution="logis", param.list=list(location=model$coefficients, scale=model$scale));
-  if(dist=="lognormal") qqPlotCensored(x=df.RWD$ , censored=df.RWD$ ==0, censoring.side="right", 
-                                       equal.axes=T, main=paste0("Q-Q Plot for the ", dist, " distribution"), 
-                                       distribution="lnorm", param.list=list(meanlog=model$coefficients, sdlog=model$scale));
-}
-
-#VOLUME DOUBLING TIME
-library(fitdistrplus)
-library(ggplot2)
+# Load required packages
 library(survival)
-#library(gganimate)
-#library(gifski)
-#library(png)
+library(ggplot2)
+library(ggfortify)
+library(survminer)
+library(dplyr)
+library(hrbrthemes)
 
-CDF_values <- read_excel("~/AMICUS/Stukken/4_Simulation model/model/CDF_values.xlsx", 
-                         +     sheet = "Sheet3", range = "H1:M17")
-
-ggplot(CDF_values, aes(x=VDT, y=CP)) + geom_point() + xlab("Volume Doubling Time (days)") + ylab("Cumulative Probability") + geom_errorbar(aes(xmin=min, xmax=max), width=0.01) + xlim(0,800)
-#+ geom_linerange(aes(xmin=min, xmax=max), colour="blue")
-
-# Choose candidate distributions
-candidate_distributions <- c("norm", "lnorm", "exp", "weibull")
-
-# Fit distributions
-fit_results <- lapply(candidate_distributions, function(dist) {
-  fitdist(CDF_values$VDT, dist)
-})
-
-descdist(CDF_values$VDT, discrete = FALSE, boot = 1000) 
-
-M_fit_w <- fitdist(CDF_values$VDT, "weibull")
-M_fit_g <- fitdist(CDF_values$VDT, "gamma")
-M_fit_ln <- fitdist(CDF_values$VDT, "lnorm")
-M_fit_exp <- fitdist(CDF_values$VDT, "exp")  
-M_fit_norm <- fitdist(CDF_values$VDT, "norm")
-
-par(mfrow = c(1, 1))
-plot.legend <- c("Weibull", "lognormal", "gamma", "exp", "norm")
-#denscomp(list(M_fit_w, M_fit_ln, M_fit_g, M_fit_exp, M_fit_norm ), legendtext = plot.legend)
-#qqcomp(list(M_fit_w, M_fit_ln, M_fit_g, M_fit_exp, M_fit_norm ), legendtext = plot.legend)
-cdfcomp(list(M_fit_w, M_fit_ln, M_fit_g, M_fit_exp, M_fit_norm ), legendtext = plot.legend)
-#ppcomp(list(M_fit_w, M_fit_ln, M_fit_g, M_fit_exp, M_fit_norm ), legendtext = plot.legend)
-
-#weibull
-wei_shape <- M_fit_w$estimate[1]
-wei_scale <- M_fit_w$estimate[2]
-
-#norm
-norm_mean <- M_fit_norm$estimate[1]
-norm_sd <- M_fit_norm$estimate[2]
-
-ggplot(CDF_values, aes(x=VDT, y=CP)) + geom_point() + xlab("Volume Doubling Time (days)") + ylab("Cumulative Probability") + geom_errorbar(aes(xmin=min, xmax=max), width=0.01) +xlim(0,800)+
-  stat_function(
-    fun = function(x) pweibull(x, shape = wei_shape, scale = wei_scale),
-    aes(color = "Weibull"),
-    linetype = "dashed") + 
-  stat_function(
-    fun = function(x) pnorm(x, mean = norm_mean, sd = norm_sd),
-    aes(color = "Normal"),
-    linetype = "solid") + 
-  stat_function(
-    fun = function(x) pexp(x, rate = M_fit_exp$estimate[1]),
-    aes(color = "Exponential"),
-    linetype = "solid") +
-  stat_function(
-    fun = function(x) pgamma(x, shape = M_fit_g$estimate[1], scale = 1/M_fit_g$estimate[2]),
-    aes(color = "Gamma"),
-    linetype = "dotted") +
-  stat_function(
-    fun = function(x) plnorm(x, meanlog = M_fit_ln$estimate[1], sdlog = M_fit_ln$estimate[2]),
-    aes(color = "Lognormal"),
-    linetype = "dotdash") +
-  scale_color_manual(values = c("red", "blue", "green", "orange", "pink")) 
-
-#p + transition_states(color)  
-  
-# Draw a single random sample from the normal distribution
-random_sample <- rnorm(1, mean = mean_normal, sd = sd_normal)
-
-# Draw 100 random samples from the normal distribution
-random_samples <- rnorm(100, mean = mean_normal, sd = sd_normal)
-
-# Plot a histogram of the random samples
-hist(random_samples, main = "Histogram of Random Samples from Normal Distribution", xlab = "Volume Doubling Time (days)", ylab = "Frequency")
-
-###### HAZARD RATE RECURRENCE AND DISTANT METASTASIS #########
-rtruncnorm <- function(n, mu, sigma, low, high) {
-  # find quantiles that correspond the the given low and high levels.
-  p_low <- pnorm(low, mu, sigma)
-  p_high <- pnorm(high, mu, sigma)
-  
-  # draw quantiles uniformly between the limits and pass these
-  # to the relevant quantile function.
-  qnorm(runif(n, p_low, p_high), mu, sigma)
-}
-# Define time intervals for analysis (e.g., within 1 year, within 5 years)
-time_intervals <- c(12, 60)  # Months
-
-#HORAN 2022
-# Create a data frame with the provided information
-horan <- data.frame(
-  detection_mode = c(rep("Symptomatic", 65), rep("Routine", 75)),
-  time_to_recurrence = c(rtruncnorm(65, 23, 9.2, low = 2, high = 58), rtruncnorm(75, 33, 13.2, low = 2, high = 60))
-)
-#sd
-#A common approach to estimating the standard deviation from the range is to use a coefficient of variation (CV), which is the ratio of the standard deviation to the mean. 
-#assuming a coefficient of variation typical for such data (which could vary depending on the specific context but is often around 0.3 to 0.5 for biological and medical data)
-#cv = sd/mean
-#sd = cv*mean = 0.4*23 = 9.2
-#samples <- rtruncnorm(1000, 23, 9.2, low = 2, high = 60)
-#hist(samples) looks cool
-
-# Subset data for patients diagnosed symptomatically within 5 years
-horan_subset <- subset(horan, detection_mode == "Symptomatic" & time_to_recurrence <= time_intervals[2])
-
-# Fit a parametric survival model (e.g., exponential)
-#fit_exponential <- survreg(Surv(time_to_recurrence) ~ 1, data = horan_subset, dist = "exponential")
-
-# Fit parametric survival models (exponential, Weibull, log-normal)
-h.fit.exp <- survreg(Surv(time_to_recurrence) ~ 1, data = horan_subset, dist = "exponential")
-h.fit.wei <- survreg(Surv(time_to_recurrence) ~ 1, data = horan_subset, dist = "weibull")
-h.fit.lognorm <- survreg(Surv(time_to_recurrence) ~ 1, data = horan_subset, dist = "lognormal")
-
-# Plot Kaplan-Meier survival curve for observed data
-h.surv.observed <- survfit(Surv(time_to_recurrence) ~ 1, data = horan_subset)
-plot(h.surv.observed, col = "black", main = "Fitted parametric survival curves", xlab = "Time (Months)", ylab = "Symptomatic LRR Probability")
-lines(h.surv.observed[1], lwd=1)
-pct <- seq(.01,.99,by=.01)
-
-lines(predict(h.fit.exp,type="quantile",p=pct)[1,],1-pct,col="red",lwd=1)
-lines(predict(h.fit.wei,type="quantile",p=pct)[1,],1-pct,col="blue",lwd=1)
-lines(predict(h.fit.lognorm,type="quantile",p=pct)[1,],1-pct,col="green",lwd=1)
-
-legend("topright", legend = c("'Observed Data' Horan et al.", "Exponential", "Weibull", "Log-Normal"), col = c("black","red", "blue", "green"), lty = 1:4, bty = "n")
-
-# Extract estimated parameter (hazard rate) from the exponential model
-#hazard_rate_exponential <- summary(fit_exponential)$coef[1]
-# Print the estimated hazard rate
-#print(paste("Estimated hazard rate (Exponential model):", hazard_rate_exponential))
-
-#EIJKELBOOM 2020
-#Given the IQR, you can estimate the standard deviation (assuming normality) using the relationship between the standard deviation and the IQR. 
-#For normally distributed data, the relationship between the standard deviation and the IQR is approximately:
-#sd = IQR/1.349
-#In a normal distribution, approximately 68% of the data falls within one standard deviation of the mean, and approximately 50% of the data falls within the IQR. 
-#Since the IQR covers roughly half of the distribution and the standard deviation covers roughly two-thirds, their ratio can be estimated as:
-#sd/IQR = 2/3*1/0.5 = 1.349
-#DFI defined from moment of diagnosis = -3 months from surgery
-#sd = (46-17)/1.349 = 21.49741
-#mean = 2.6 years = 31 months - 3 = 28 months
-
-eijkelboom <- data.frame(
-  detection_mode = c(rep("Interval", 113), rep("Routine", 109)),
-  time_to_recurrence = c(rtruncnorm(113, 28, 21.5, low = 0, high = 70), rtruncnorm(109, 32, 26.6, low = 0, high = 70))
-)
-
-# Subset data for patients diagnosed symptomatically within 5 years
-eijkelboom_subset <- subset(eijkelboom, detection_mode == "Interval" & time_to_recurrence <= time_intervals[2])
-
-# Fit parametric survival models (exponential, Weibull, log-normal)
-e.fit.exp <- survreg(Surv(time_to_recurrence) ~ 1, data = eijkelboom_subset, dist = "exponential")
-e.fit.wei <- survreg(Surv(time_to_recurrence) ~ 1, data = eijkelboom_subset, dist = "weibull")
-e.fit.lognorm <- survreg(Surv(time_to_recurrence) ~ 1, data = eijkelboom_subset, dist = "lognormal")
-
-# Plot Kaplan-Meier survival curve for observed data
-e.surv.observed <- survfit(Surv(time_to_recurrence) ~ 1, data = eijkelboom_subset)
-plot(e.surv.observed, col = "black", main = "Fitted parametric survival curves", xlab = "Time (Months)", ylab = "Symptomatic LRR Probability")
-lines(e.surv.observed[1], lwd=1)
-pct <- seq(.01,.99,by=.01)
-
-lines(predict(e.fit.exp,type="quantile",p=pct)[1,],1-pct,col="red",lwd=1)
-lines(predict(e.fit.wei,type="quantile",p=pct)[1,],1-pct,col="blue",lwd=1)
-lines(predict(e.fit.lognorm,type="quantile",p=pct)[1,],1-pct,col="green",lwd=1)
-
-legend("topright", legend = c("'Observed Data' Eijkelboom et al.", "Exponential", "Weibull", "Log-Normal"), col = c("black","red", "blue", "green"), lty = 1:4, bty = "n")
-
-## COMBINED
-he.combi <- data.frame(
-  detection_mode = c(rep("Symptomatic", 113), rep("Symptomatic", 65)),
-  time_to_recurrence = c(rtruncnorm(113, 28, 21.5, low = 0, high = 70), rtruncnorm(65, 23, 9.2, low = 2, high = 58))
-)
-
-# Subset data for patients diagnosed symptomatically within 5 years
-combi.subset <- subset(he.combi, detection_mode == "Symptomatic" & time_to_recurrence <= time_intervals[2])
-
-# Fit parametric survival models (exponential, Weibull, log-normal)
-he.fit.exp <- survreg(Surv(time_to_recurrence) ~ 1, data = combi.subset, dist = "exponential")
-he.fit.wei <- survreg(Surv(time_to_recurrence) ~ 1, data = combi.subset, dist = "weibull")
-he.fit.lognorm <- survreg(Surv(time_to_recurrence) ~ 1, data = combi.subset, dist = "lognormal")
-
-# Plot Kaplan-Meier survival curve for observed data
-he.surv.observed <- survfit(Surv(time_to_recurrence) ~ 1, data = combi.subset)
-plot(he.surv.observed, col = "black", main = "Fitted parametric survival curves", xlab = "Time (Months)", ylab = "Asymptomatic LRR Probability")
-lines(he.surv.observed[1], lwd=1)
-pct <- seq(.01,.99,by=.01)
-
-#lines(predict(he.fit.exp,type="quantile",p=pct)[1,],1-pct,col="red",lwd=1)
-lines(predict(he.fit.wei,type="quantile",p=pct)[1,],1-pct,col="blue",lwd=1)
-#lines(predict(he.fit.lognorm,type="quantile",p=pct)[1,],1-pct,col="green",lwd=1)
-
-legend("topright", legend = c("Combined data LRR", "Exponential", "Weibull", "Log-Normal"), col = c("black","red", "blue", "green"), lty = 1:4, bty = "n")
-
-#WEIBULL appears to fit best
-# Extract estimated parameter (hazard rate) from the weibull model
-hazard.rate.weibull <- summary(he.fit.wei)$coef[1]
-# Print the estimated hazard rate
-print(paste("Estimated hazard rate (Weibull model, per month):", hazard.rate.weibull))
-print(paste("Estimated hazard rate (Weibull model, per day):", (hazard.rate.weibull/30.44)))
-
-##### CHAT WEIBULL
-n_patients <- 200  # Number of patients in the model
-random_times <- rweibull(n_patients, shape = he.fit.wei$scale, scale = exp(he.fit.wei$coefficients))
-
-# Print the randomly generated times
-print(random_times)
-
-weibull <- data.frame(
-  detection_mode = rep("Symptomatic", 200),
-  time_to_recurrence =  rweibull(n_patients, shape = 1/(he.fit.wei$scale), scale = exp(he.fit.wei$coefficients))
-)
-surv.observed.w <- survfit(Surv(time_to_recurrence) ~ 1, data = weibull)
-lines(surv.observed.w[1], lwd=1, col='pink')
+# #time = time between start follow-up and first event
+# #event = follow-up moment
+# 
+# # Distributions considered
+# dist.considered <- c("exponential", 
+#                      "weibull", 
+#                      "logistic", 
+#                      "lognormal");
+# 
+# # Data for first-line
+# df.RWD <- df;
+# 
+# # Select distribution
+# dist.performance <- sapply(dist.considered, function(dist) {
+#   
+#   # Fit survival model for distribution
+#   model <- survreg(formula=Surv(time=, event=) ~ 1, data=df.RWD, dist=dist);
+#   
+#   # Return the likelihood
+#   return(model$loglik[1]);
+#   
+# });
+# 
+# # Print the results and which distribution would be selected based on the likelihood
+# dist.selected <- dist.considered[which.max(dist.performance)];
+# print(dist.performance);
+# 
+# # Plot the survival curves
+# for(i in 1:length(dist.considered)) {
+#   
+#   # Get distribution type
+#   dist <- dist.considered[i];
+#   
+#   # Fit survival model for distribution
+#   model <- survreg(formula=Surv(time=, event=) ~ 1, data=df.RWD, dist=dist);
+#   
+#   # If it is the first distribution considered, plot kaplan-meier
+#   if(i==1) plot(survfit(Surv(time=, event=) ~ 1, data=df.RWD), conf.int=F, xlab="Time to follow-up event (days)", lwd=2);
+#   
+#   # Plot fitted distribution
+#   lines(y=seq(.99, .01, by=-.01), x=predict(model, type="quantile", p=seq(.01, .99, by=.01))[1,], col=rainbow(length(dist.considered))[i], lwd=2)
+#   
+#   # Add the legend if it is the last distribution
+#   if(i==length(dist.considered)) legend("right", legend=dist.considered, col=rainbow(length(dist.considered)), lty=1, lwd=2);
+#   
+# } 
+# 
+# # Plot the Q-Q Plots curves
+# par(mfrow=c(2,2));
+# for(i in 1:length(dist.considered)) {
+#   
+#   # Get distribution type
+#   dist <- dist.considered[i];
+#   
+#   # Fit survival model for distribution
+#   model <- survreg(formula=Surv(time=, event=) ~ 1, data=df.RWD, dist=dist);
+#   
+#   # Plot the Q-Q Plot
+#   if(dist=="exponential") qqPlotCensored(x=df.RWD$ , censored=df.RWD$ ==0, censoring.side="right", 
+#                                          equal.axes=T, main=paste0("Q-Q Plot for the ", dist, " distribution"),
+#                                          distribution="exp", param.list=list(rate=1/exp(model$coefficients)));
+#   if(dist=="weibull") qqPlotCensored(x=df.RWD$ , censored=df.RWD$ ==0, censoring.side="right", 
+#                                      equal.axes=T, main=paste0("Q-Q Plot for the ", dist, " distribution"), 
+#                                      distribution="weibull", param.list=list(shape=1/model$scale, scale=exp(model$coefficients)));
+#   if(dist=="logistic") qqPlotCensored(x=df.RWD$ , censored=df.RWD$ ==0, censoring.side="right", 
+#                                       equal.axes=T, main=paste0("Q-Q Plot for the ", dist, " distribution"), 
+#                                       distribution="logis", param.list=list(location=model$coefficients, scale=model$scale));
+#   if(dist=="lognormal") qqPlotCensored(x=df.RWD$ , censored=df.RWD$ ==0, censoring.side="right", 
+#                                        equal.axes=T, main=paste0("Q-Q Plot for the ", dist, " distribution"), 
+#                                        distribution="lnorm", param.list=list(meanlog=model$coefficients, sdlog=model$scale));
+# }
+# 
+# #VOLUME DOUBLING TIME
+# library(fitdistrplus)
+# library(ggplot2)
+# library(survival)
+# #library(gganimate)
+# #library(gifski)
+# #library(png)
+# 
+# CDF_values <- read_excel("~/AMICUS/Stukken/4_Simulation model/model/CDF_values.xlsx", 
+#                          +     sheet = "Sheet3", range = "H1:M17")
+# 
+# ggplot(CDF_values, aes(x=VDT, y=CP)) + geom_point() + xlab("Volume Doubling Time (days)") + ylab("Cumulative Probability") + geom_errorbar(aes(xmin=min, xmax=max), width=0.01) + xlim(0,800)
+# #+ geom_linerange(aes(xmin=min, xmax=max), colour="blue")
+# 
+# # Choose candidate distributions
+# candidate_distributions <- c("norm", "lnorm", "exp", "weibull")
+# 
+# # Fit distributions
+# fit_results <- lapply(candidate_distributions, function(dist) {
+#   fitdist(CDF_values$VDT, dist)
+# })
+# 
+# descdist(CDF_values$VDT, discrete = FALSE, boot = 1000) 
+# 
+# M_fit_w <- fitdist(CDF_values$VDT, "weibull")
+# M_fit_g <- fitdist(CDF_values$VDT, "gamma")
+# M_fit_ln <- fitdist(CDF_values$VDT, "lnorm")
+# M_fit_exp <- fitdist(CDF_values$VDT, "exp")  
+# M_fit_norm <- fitdist(CDF_values$VDT, "norm")
+# 
+# par(mfrow = c(1, 1))
+# plot.legend <- c("Weibull", "lognormal", "gamma", "exp", "norm")
+# #denscomp(list(M_fit_w, M_fit_ln, M_fit_g, M_fit_exp, M_fit_norm ), legendtext = plot.legend)
+# #qqcomp(list(M_fit_w, M_fit_ln, M_fit_g, M_fit_exp, M_fit_norm ), legendtext = plot.legend)
+# cdfcomp(list(M_fit_w, M_fit_ln, M_fit_g, M_fit_exp, M_fit_norm ), legendtext = plot.legend)
+# #ppcomp(list(M_fit_w, M_fit_ln, M_fit_g, M_fit_exp, M_fit_norm ), legendtext = plot.legend)
+# 
+# #weibull
+# wei_shape <- M_fit_w$estimate[1]
+# wei_scale <- M_fit_w$estimate[2]
+# 
+# #norm
+# norm_mean <- M_fit_norm$estimate[1]
+# norm_sd <- M_fit_norm$estimate[2]
+# 
+# ggplot(CDF_values, aes(x=VDT, y=CP)) + geom_point() + xlab("Volume Doubling Time (days)") + ylab("Cumulative Probability") + geom_errorbar(aes(xmin=min, xmax=max), width=0.01) +xlim(0,800)+
+#   stat_function(
+#     fun = function(x) pweibull(x, shape = wei_shape, scale = wei_scale),
+#     aes(color = "Weibull"),
+#     linetype = "dashed") + 
+#   stat_function(
+#     fun = function(x) pnorm(x, mean = norm_mean, sd = norm_sd),
+#     aes(color = "Normal"),
+#     linetype = "solid") + 
+#   stat_function(
+#     fun = function(x) pexp(x, rate = M_fit_exp$estimate[1]),
+#     aes(color = "Exponential"),
+#     linetype = "solid") +
+#   stat_function(
+#     fun = function(x) pgamma(x, shape = M_fit_g$estimate[1], scale = 1/M_fit_g$estimate[2]),
+#     aes(color = "Gamma"),
+#     linetype = "dotted") +
+#   stat_function(
+#     fun = function(x) plnorm(x, meanlog = M_fit_ln$estimate[1], sdlog = M_fit_ln$estimate[2]),
+#     aes(color = "Lognormal"),
+#     linetype = "dotdash") +
+#   scale_color_manual(values = c("red", "blue", "green", "orange", "pink")) 
+# 
+# #p + transition_states(color)  
+#   
+# # Draw a single random sample from the normal distribution
+# random_sample <- rnorm(1, mean = mean_normal, sd = sd_normal)
+# 
+# # Draw 100 random samples from the normal distribution
+# random_samples <- rnorm(100, mean = mean_normal, sd = sd_normal)
+# 
+# # Plot a histogram of the random samples
+# hist(random_samples, main = "Histogram of Random Samples from Normal Distribution", xlab = "Volume Doubling Time (days)", ylab = "Frequency")
+# 
+# ###### HAZARD RATE RECURRENCE AND DISTANT METASTASIS #########
+# rtruncnorm <- function(n, mu, sigma, low, high) {
+#   # find quantiles that correspond the the given low and high levels.
+#   p_low <- pnorm(low, mu, sigma)
+#   p_high <- pnorm(high, mu, sigma)
+#   
+#   # draw quantiles uniformly between the limits and pass these
+#   # to the relevant quantile function.
+#   qnorm(runif(n, p_low, p_high), mu, sigma)
+# }
+# # Define time intervals for analysis (e.g., within 1 year, within 5 years)
+# time_intervals <- c(12, 60)  # Months
+# 
+# #HORAN 2022
+# # Create a data frame with the provided information
+# horan <- data.frame(
+#   detection_mode = c(rep("Symptomatic", 65), rep("Routine", 75)),
+#   time_to_recurrence = c(rtruncnorm(65, 23, 9.2, low = 2, high = 58), rtruncnorm(75, 33, 13.2, low = 2, high = 60))
+# )
+# #sd
+# #A common approach to estimating the standard deviation from the range is to use a coefficient of variation (CV), which is the ratio of the standard deviation to the mean. 
+# #assuming a coefficient of variation typical for such data (which could vary depending on the specific context but is often around 0.3 to 0.5 for biological and medical data)
+# #cv = sd/mean
+# #sd = cv*mean = 0.4*23 = 9.2
+# #samples <- rtruncnorm(1000, 23, 9.2, low = 2, high = 60)
+# #hist(samples) looks cool
+# 
+# # Subset data for patients diagnosed symptomatically within 5 years
+# horan_subset <- subset(horan, detection_mode == "Symptomatic" & time_to_recurrence <= time_intervals[2])
+# 
+# # Fit a parametric survival model (e.g., exponential)
+# #fit_exponential <- survreg(Surv(time_to_recurrence) ~ 1, data = horan_subset, dist = "exponential")
+# 
+# # Fit parametric survival models (exponential, Weibull, log-normal)
+# h.fit.exp <- survreg(Surv(time_to_recurrence) ~ 1, data = horan_subset, dist = "exponential")
+# h.fit.wei <- survreg(Surv(time_to_recurrence) ~ 1, data = horan_subset, dist = "weibull")
+# h.fit.lognorm <- survreg(Surv(time_to_recurrence) ~ 1, data = horan_subset, dist = "lognormal")
+# 
+# # Plot Kaplan-Meier survival curve for observed data
+# h.surv.observed <- survfit(Surv(time_to_recurrence) ~ 1, data = horan_subset)
+# plot(h.surv.observed, col = "black", main = "Fitted parametric survival curves", xlab = "Time (Months)", ylab = "Symptomatic LRR Probability")
+# lines(h.surv.observed[1], lwd=1)
+# pct <- seq(.01,.99,by=.01)
+# 
+# lines(predict(h.fit.exp,type="quantile",p=pct)[1,],1-pct,col="red",lwd=1)
+# lines(predict(h.fit.wei,type="quantile",p=pct)[1,],1-pct,col="blue",lwd=1)
+# lines(predict(h.fit.lognorm,type="quantile",p=pct)[1,],1-pct,col="green",lwd=1)
+# 
+# legend("topright", legend = c("'Observed Data' Horan et al.", "Exponential", "Weibull", "Log-Normal"), col = c("black","red", "blue", "green"), lty = 1:4, bty = "n")
+# 
+# # Extract estimated parameter (hazard rate) from the exponential model
+# #hazard_rate_exponential <- summary(fit_exponential)$coef[1]
+# # Print the estimated hazard rate
+# #print(paste("Estimated hazard rate (Exponential model):", hazard_rate_exponential))
+# 
+# #EIJKELBOOM 2020
+# #Given the IQR, you can estimate the standard deviation (assuming normality) using the relationship between the standard deviation and the IQR. 
+# #For normally distributed data, the relationship between the standard deviation and the IQR is approximately:
+# #sd = IQR/1.349
+# #In a normal distribution, approximately 68% of the data falls within one standard deviation of the mean, and approximately 50% of the data falls within the IQR. 
+# #Since the IQR covers roughly half of the distribution and the standard deviation covers roughly two-thirds, their ratio can be estimated as:
+# #sd/IQR = 2/3*1/0.5 = 1.349
+# #DFI defined from moment of diagnosis = -3 months from surgery
+# #sd = (46-17)/1.349 = 21.49741
+# #mean = 2.6 years = 31 months - 3 = 28 months
+# 
+# eijkelboom <- data.frame(
+#   detection_mode = c(rep("Interval", 113), rep("Routine", 109)),
+#   time_to_recurrence = c(rtruncnorm(113, 28, 21.5, low = 0, high = 70), rtruncnorm(109, 32, 26.6, low = 0, high = 70))
+# )
+# 
+# # Subset data for patients diagnosed symptomatically within 5 years
+# eijkelboom_subset <- subset(eijkelboom, detection_mode == "Interval" & time_to_recurrence <= time_intervals[2])
+# 
+# # Fit parametric survival models (exponential, Weibull, log-normal)
+# e.fit.exp <- survreg(Surv(time_to_recurrence) ~ 1, data = eijkelboom_subset, dist = "exponential")
+# e.fit.wei <- survreg(Surv(time_to_recurrence) ~ 1, data = eijkelboom_subset, dist = "weibull")
+# e.fit.lognorm <- survreg(Surv(time_to_recurrence) ~ 1, data = eijkelboom_subset, dist = "lognormal")
+# 
+# # Plot Kaplan-Meier survival curve for observed data
+# e.surv.observed <- survfit(Surv(time_to_recurrence) ~ 1, data = eijkelboom_subset)
+# plot(e.surv.observed, col = "black", main = "Fitted parametric survival curves", xlab = "Time (Months)", ylab = "Symptomatic LRR Probability")
+# lines(e.surv.observed[1], lwd=1)
+# pct <- seq(.01,.99,by=.01)
+# 
+# lines(predict(e.fit.exp,type="quantile",p=pct)[1,],1-pct,col="red",lwd=1)
+# lines(predict(e.fit.wei,type="quantile",p=pct)[1,],1-pct,col="blue",lwd=1)
+# lines(predict(e.fit.lognorm,type="quantile",p=pct)[1,],1-pct,col="green",lwd=1)
+# 
+# legend("topright", legend = c("'Observed Data' Eijkelboom et al.", "Exponential", "Weibull", "Log-Normal"), col = c("black","red", "blue", "green"), lty = 1:4, bty = "n")
+# 
+# ## COMBINED
+# he.combi <- data.frame(
+#   detection_mode = c(rep("Symptomatic", 113), rep("Symptomatic", 65)),
+#   time_to_recurrence = c(rtruncnorm(113, 28, 21.5, low = 0, high = 70), rtruncnorm(65, 23, 9.2, low = 2, high = 58))
+# )
+# 
+# # Subset data for patients diagnosed symptomatically within 5 years
+# combi.subset <- subset(he.combi, detection_mode == "Symptomatic" & time_to_recurrence <= time_intervals[2])
+# 
+# # Fit parametric survival models (exponential, Weibull, log-normal)
+# he.fit.exp <- survreg(Surv(time_to_recurrence) ~ 1, data = combi.subset, dist = "exponential")
+# he.fit.wei <- survreg(Surv(time_to_recurrence) ~ 1, data = combi.subset, dist = "weibull")
+# he.fit.lognorm <- survreg(Surv(time_to_recurrence) ~ 1, data = combi.subset, dist = "lognormal")
+# 
+# # Plot Kaplan-Meier survival curve for observed data
+# he.surv.observed <- survfit(Surv(time_to_recurrence) ~ 1, data = combi.subset)
+# plot(he.surv.observed, col = "black", main = "Fitted parametric survival curves", xlab = "Time (Months)", ylab = "Asymptomatic LRR Probability")
+# lines(he.surv.observed[1], lwd=1)
+# pct <- seq(.01,.99,by=.01)
+# 
+# #lines(predict(he.fit.exp,type="quantile",p=pct)[1,],1-pct,col="red",lwd=1)
+# lines(predict(he.fit.wei,type="quantile",p=pct)[1,],1-pct,col="blue",lwd=1)
+# #lines(predict(he.fit.lognorm,type="quantile",p=pct)[1,],1-pct,col="green",lwd=1)
+# 
+# legend("topright", legend = c("Combined data LRR", "Exponential", "Weibull", "Log-Normal"), col = c("black","red", "blue", "green"), lty = 1:4, bty = "n")
+# 
+# #WEIBULL appears to fit best
+# # Extract estimated parameter (hazard rate) from the weibull model
+# hazard.rate.weibull <- summary(he.fit.wei)$coef[1]
+# # Print the estimated hazard rate
+# print(paste("Estimated hazard rate (Weibull model, per month):", hazard.rate.weibull))
+# print(paste("Estimated hazard rate (Weibull model, per day):", (hazard.rate.weibull/30.44)))
+# 
+# ##### CHAT WEIBULL
+# n_patients <- 200  # Number of patients in the model
+# random_times <- rweibull(n_patients, shape = he.fit.wei$scale, scale = exp(he.fit.wei$coefficients))
+# 
+# # Print the randomly generated times
+# print(random_times)
+# 
+# weibull <- data.frame(
+#   detection_mode = rep("Symptomatic", 200),
+#   time_to_recurrence =  rweibull(n_patients, shape = 1/(he.fit.wei$scale), scale = exp(he.fit.wei$coefficients))
+# )
+# surv.observed.w <- survfit(Surv(time_to_recurrence) ~ 1, data = weibull)
+# lines(surv.observed.w[1], lwd=1, col='pink')
 
 ####### DATA AE ##############
 load("~/AMICUS/Stukken/4_Simulation model/model/des_model/preproces/data_AE.RData")
@@ -297,13 +304,7 @@ load("~/AMICUS/Stukken/4_Simulation model/model/des_model/preproces/data_AE.RDat
 # Yes, with the information you provided, including the known distribution of V(t) and the dataset containing patients' recurrence data, disease-free interval,
 #detection method, and tumor size at detection, you have sufficient information to proceed with the analysis. 
 #You can use R to analyze the data and estimate the hazard function h(V(t)) of the time to symptomatic detection Tdet
-# Load required packages
-library(survival)
-library(ggplot2)
-library(ggfortify)
-library(survminer)
 
-library(dplyr)
 df_patient <- df_patient %>% 
   mutate(symp = na_if(symp, 99))
 
@@ -314,6 +315,11 @@ df_patient <- df_patient[-c(12), ]
 df_patient$size <- ifelse(df_patient$pt3 == 1 & is.na(df_patient$size), round(runif(7, 0, 20)), 
                           ifelse(df_patient$pt3 == 2 & is.na(df_patient$size), round(runif(5, 21, 50)),
                                  ifelse(df_patient$pt3 == 3 & is.na(df_patient$size), round(runif(1, 51, 85)), df_patient$size)))  
+
+df_patient$symp <- as.factor(df_patient$symp)
+ggplot(df_patient, aes(x=dfi, y=vdt, col=symp)) + 
+  geom_point() 
+  
 
 # #Use Cox proportional hazards regression to model the relationship between tumor size at detection and the hazard of symptomatic recurrence.
 # # Fit Cox proportional hazards model
@@ -344,10 +350,10 @@ df_patient$size <- ifelse(df_patient$pt3 == 1 & is.na(df_patient$size), round(ru
 
 ############## baseline hazard
 # Fit Cox proportional hazards model
-cox_model <- coxph(Surv(dfi, symp) ~ size, data = df_patient)
+symp_cox_model <- coxph(Surv(dfi, symp) ~ size, data = df_patient)
 
 # Extract baseline hazard function
-baseline_hazard <- basehaz(cox_model)
+baseline_hazard <- basehaz(symp_cox_model)
 
 # Plot the baseline hazard function
 plot(baseline_hazard$time, baseline_hazard$hazard, type = "l", 
@@ -476,10 +482,7 @@ likelihood_symptomatic <- 1 - pweibull(survival_prob, shape = 1/(weibull_model$s
 # Print likelihood
 print(likelihood_symptomatic*100)
 
-
-
-
-###
+### VISUALIZATION ####
 #https://cran.r-project.org/web/packages/contsurvplot/vignettes/introduction.html
 #install.packages("contsurvplot")
 library(contsurvplot)
