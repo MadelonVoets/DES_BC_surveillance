@@ -39,6 +39,10 @@ p.chemo.y <- p.chemo.y
 # RADIO                             No 0 | Yes 1
 p.rt.y <- p.rt.y
 p.rt.n <- p.rt.n
+#p.bsc.rt.n <- p.bsc.rt.n 
+#p.bsc.rt.y <- p.bsc.rt.y
+#p.mst.rt.n <- p.mst.rt.n
+#p.mst.rt.y <- p.mst.rt.y
 # HORM                              HR- 0 | HR+ THER- 1 | HR+ THER+ 2
 p.hr.n <- p.hr.n
 p.hr.y.ther.n <- p.hr.y.ther.n
@@ -76,94 +80,19 @@ p.spec.mri <- 0.74
 # Parameters imaging
 #probabilities during annual surveillance 
 #TO DO probs uitzoeken
-p.s.mammo <- 0
-p.s.us <- 0.
+p.s.mammo <- 1 #iedereen als eerste mammo
+p.s.us <- 0
 p.s.mri <- 0
 
 #probabilities during additional imaging
 #TO DO probs uitzoeken
-p.a.mammo <- 0
-p.a.us <- 0
-p.a.mri <- 0
-
-#TO DO costs uitzoeken
-c_poli <- function(n.pat=1){
-  cost <- round(rtnorm(n.pat, mean = 120, sd = 0, a = 0), digits = 2)
-  return(cost)}
-
-#cost conventional OR, per minute
-c_or <- function(n.pat=1){
-  cost <- round(rtnorm(n.pat, mean = 11.09, sd = 0, a = 0), digits = 2)
-  return(cost)}
-
-c_mammo <- function(n.pat=1){
-  cost <- round(rtnorm(n.pat, mean = 82.17, sd = 0, a = 0), digits = 2)
-  return(cost)
-}
-c_us <- function(n.pat=1){
-  cost <- round(rtnorm(n.pat, mean = 95.80, sd = 0, a = 0), digits = 2)
-  return(cost)
-}
-c_mri <- function(n.pat=1){
-  cost <- round(rtnorm(n.pat, mean = 267, sd = 0, a = 0), digits = 2) #267 bew. gem. 271 bov ext
-  return(cost)
-}
-c_pet <- function(n.pat=1){
-  cost <- round(rtnorm(n.pat, mean = 971, sd = 0, a = 0), digits = 2)
-  return(cost)
-}
-c_biopsy <- function(n.pat=1){
-  cost <- round(rtnorm(n.pat, mean = 161.09, sd = 4.01 , a = 0), digits = 2) #zilveren kruis 2023
-  return(cost)
-} #dependent on image-guided?
-
-#treatment costs
-c_horm <- function(n.pat=1){
-  cost <- round(rtnorm(n.pat, mean = 1, sd = 1, a = 0), digits = 2)
-  return(cost)
-  }
-c_radio <- function(n.pat=1){
-  cost <- round(rtnorm(n.pat, mean = 1, sd = 1, a = 0), digits = 2)
-  return(cost)
-}
-c_chemo <- function(n.pat=1){
-  cost <- round(rtnorm(n.pat, mean = 1, sd = 1, a = 0), digits = 2)
-  return(cost)
-}
-c_MST <- function(n.pat=1){
-  cost <- round(rtnorm(n.pat, mean = 1, sd = 1, a = 0), digits = 2)
-  return(cost)
-}
-c_tar <- function(n.pat=1){
-  cost <- round(rtnorm(n.pat, mean = 1, sd = 1, a = 0), digits = 2)
-  return(cost)
-}
-#treatment timeouts
-t_horm <- function(n.pat=1){
-  timeout <- round(rtnorm(n.pat, mean = 1, sd = 1, a = 0))
-  return(timeout)
-}
-t_radio <- function(n.pat=1){
-  timeout <- round(rtnorm(n.pat, mean = 1, sd = 1, a = 0))
-  return(timeout)
-}
-t_chemo <- function(n.pat=1){
-  timeout <- round(rtnorm(n.pat, mean = 1, sd = 1, a = 0))
-  return(timeout)
-}
-t_MST <- function(n.pat=1){
-  timeout <- round(rtnorm(n.pat, mean = 1, sd = 1, a = 0))
-  return(timeout)
-}
-t_tar <- function(n.pat=1){
-  timeout <- round(rtnorm(n.pat, mean = 1, sd = 1, a = 0))
-  return(timeout)
-}
+p.a.mammo <- 0.15
+p.a.us <- 0.8
+p.a.mri <- 0.05
 #Parameters probabilities of DM or oligo disease
 p.oligo <- 0.165
 p.noligo <- 0.835
-
-#Probabilities type of therapy  for oligo
+#Probabilities type of therapy for oligo
 p.o.l.rt <- 0.28
 p.o.s.horm <- 0.43
 p.o.s.chemo <- 0.12
@@ -177,13 +106,36 @@ p.s.chemo <- 0.07
 p.s.ch.tar <- 0.05
 p.s.tar <- 0.27
 p.s.n <- 0.04
+#SONABRE REGISTRY
+p.pp.t <- 0.72
+p.pp.c <- 0.71
+p.pp.h <- 0.80
+p.pp.rt <- 0.54
+p.pp.s <- 0.42
+
+p.mp.t <- 0.64
+p.mp.c <- 0.64
+p.mp.h <- 0.04
+p.mp.rt <- 0.47
+p.mp.s <- 0.38
+
+p.pm.t <- 0.39
+p.pm.c <- 0.46
+p.pm.h <- 0.86
+p.pm.rt <- 0.50
+p.pm.s <- 0.30
+
+p.mm.t <- 0.27
+p.mm.c <- 0.59
+p.mm.h <- 0.06
+p.mm.rt <- 0.58
+p.mm.s <- 0.41
 #survival parameters oligo dm (<3)
 oligo.scale = 0.9248594
 oligo.coef = 7.434267 
 #survival parameters dm (>3)
 dm.scale = 0.8820885
-dm.coef = 7.089314 
-
+dm.coef = 6.989314            #OG: 7.089314 
 #Routine visits 
 routine_visit_times <- c(0, 365, 730, 1095, 1460, 1825)
 
