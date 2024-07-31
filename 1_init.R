@@ -11,7 +11,6 @@ library(rsvg);                   #Version 2.6.0
 library(readr)
 library(contsurvplot)
 library(survival)
-#library(DiagrammeRsvg)
 #library(readxl)
 
 sessionInfo()
@@ -29,7 +28,7 @@ inf_matrix <- read.csv("INFLUENCE_matrix.csv", sep=";")
 mortality_data <- read.csv("cbs_sterftekans18-100.csv",sep = ";")
 
 # Load the NKR variables from 2017-2019
-nkr_variables <- read.csv("nkr_variables.txt", sep=";")
+nkr_variables <- read.csv("nkr_variables2.txt", sep=";")
 # Iterate over each column in the dataframe
 for (col_name in names(nkr_variables)) {
   # Assign the column as a separate object in the environment
