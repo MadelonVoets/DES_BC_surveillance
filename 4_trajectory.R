@@ -18,7 +18,7 @@ treat.trj <- trajectory() %>%
                                                                chemo = get_attribute(sim, "Chemo")), mod = "+") %>%
   timeout(task = function() (get_attribute(sim, "t_treat"))) %>%
   release(resource = "LRR.Treatment") %>%
-  rollback(target=13, times=Inf)
+  rollback(target=14, times=Inf)
 
 #symptomatic DM INCOMPLETE
 dm.trj <- trajectory() %>% 
@@ -33,13 +33,13 @@ dm.trj <- trajectory() %>%
   timeout(task = function() round(rtnorm(1, mean = 1, sd = 1, a = 0, b = 7))) %>% #time between screening and result #TO DO VERIFY
   release(resource = "WB.Imaging") %>%
   #non-curative / palliative care
-  seize(resource = "NC-treatment") %>%
+  seize(resource = "NC.treatment") %>%
   set_attribute(
     keys = c("ther", "cost"),
-    values = function() fn_nc_treatment(her2 = get_attribute(sim, "Antiher2"), hr = get_attribute(sim,"Horm")),
+    values = function() fn_nc_treatment2(her2 = get_attribute(sim, "Antiher2"), hr = get_attribute(sim,"Horm"), type = get_attribute(sim,"type.dm")),
     mod = "+" ) %>%
   timeout(task = function() 1) %>% #TO DO VERIFY fn_nc_treatment
-  release(resource = "NC-treatment") %>%
+  release(resource = "NC.treatment") %>%
   wait() #wait until patient dies, either background mortality or bc death
 
  
@@ -50,11 +50,11 @@ fup.trj <- trajectory() %>%
   set_attribute(key=c("Age","A.grp"), value=function() fn_age()) %>%
   set_attribute(key="Grade", value=function() fn_grade()) %>%
   set_attribute(key="Stage", value=function() fn_stage()) %>%
-  set_attribute(key="Nstatus", value=function() fn_nstatus(1)) %>%
+  set_attribute(key="Nstatus", value=function() fn_nstatus()) %>%
   set_attribute(key="Multif", value=function() fn_multif()) %>%
   set_attribute(key="Sur", value=function() fn_sur()) %>%
   set_attribute(key="Chemo", value=function() fn_chemo()) %>%
-  set_attribute(key="Radio", value=function() fn_radio()) %>%
+  set_attribute(key="Radio", value=function() fn_radio(sur=get_attribute(sim, "Sur"))) %>%
   set_attribute(key="Horm", value=function() fn_horm()) %>%
   set_attribute(key="Antiher2", value=function() fn_antiher2()) %>%
 
@@ -79,30 +79,30 @@ fup.trj <- trajectory() %>%
                                                                                get_attribute(sim, "Horm"),
                                                                                get_attribute(sim, "Antiher2")), rec=2))) %>%
   set_attribute(key="vdt_lrr", value=function() ifelse(get_attribute(sim,"t_LRR") == 0, 0, fn_trnorm(1, mean.norm.vdt, sd.norm.vdt,
-                                                         fn_minmax(V_d, V_0, t_LRR = get_attribute(sim,"t_LRR") - 365, t_LRR = get_attribute(sim,"t_LRR"))[1],
-                                                         fn_minmax(V_d, V_0, t_LRR = get_attribute(sim,"t_LRR") - 365, t_LRR = get_attribute(sim,"t_LRR"))[2]))) %>%
+                                                         fn_minmax(V_d, V_0, t_min = get_attribute(sim,"t_LRR") - 365, t_max = get_attribute(sim,"t_LRR"))[1], #+1??
+                                                         fn_minmax(V_d, V_0, t_min = get_attribute(sim,"t_LRR") - 365, t_max = get_attribute(sim,"t_LRR"))[2]))) %>%
   set_attribute(key="vdt_dm", value=function() ifelse(get_attribute(sim,"t_DM") == 0, 0, fn_trnorm(1, mean.norm.vdt, sd.norm.vdt,
-                                                          fn_minmax(V_d, V_0, t_DM = get_attribute(sim,"t_DM") - 365, t_DM = get_attribute(sim,"t_DM"))[1],
-                                                          fn_minmax(V_d, V_0, t_DM = get_attribute(sim,"t_DM") - 365, t_DM = get_attribute(sim,"t_DM"))[2]))) %>%
+                                                          fn_minmax(V_d, V_0, t_min = get_attribute(sim,"t_DM") - 365, t_max = get_attribute(sim,"t_DM"))[1],
+                                                          fn_minmax(V_d, V_0, t_min = get_attribute(sim,"t_DM") - 365, t_max = get_attribute(sim,"t_DM"))[2]))) %>%
   
   #does patient become symptomatic or is lrr detected at routine interval?
-  set_attribute(key = "t_symp_lrr", value=function() fn_days_symptomatic(vdt = get_attribute(sim, "vdt_lrr"), dfi = get_attribute(sim, ""), data = df_patient, model = symp_cox_model)) %>%
-  set_attribute(keys = "start_surveillance", values = function() now(.env = sim)) %>%
+  set_attribute(key = "t_symp_lrr", value=function() fn_days_symptomatic(vdt = get_attribute(sim, "vdt_lrr"), data = df_patient, model = symp_cox_model)) %>%
   #background mortality
-  renege_in(t = function() now(.env = sim) + fn_days_death_oc(age = get_attribute(sim, "Age"), sex = get_attribute(sim, "Sex"), mortality_data), out = out.trj) %>%
+  #renege_in(t = function() now(.env = sim) + fn_days_death_oc(age = get_attribute(sim, "Age"), sex = get_attribute(sim, "Sex"), mortality_data), out = out.trj) %>%
   # #symptomatic DM INCOMPLETE
-  renege_in(t = function() now(.env = sim) + fn_days_symptomatic(vdt = get_attribute(sim, "vdt_dm"), data = df_patient, model = symp_cox_model), out = dm.trj) %>%
+  #renege_in(t = function() now(.env = sim) + fn_days_symptomatic(vdt = get_attribute(sim, "vdt_dm"), data = df_patient, model = symp_cox_model), out = dm.trj) %>%
   # #symptomatic LRR INCOMPLETE
-  renege_in(t = function() now(.env = sim) + fn_days_symptomatic(vdt = get_attribute(sim, "vdt_lrr"), data = df_patient, model = symp_cox_model), out = treat.trj) %>% 
+  #renege_in(t = function() now(.env = sim) + fn_days_symptomatic(vdt = get_attribute(sim, "vdt_lrr"), data = df_patient, model = symp_cox_model), out = treat.trj) %>% 
 
   # Time to imaging event from eligibility
   timeout(task = function() round(rtnorm(1, mean = 15.5, sd = 10, a = 0, b = Inf))) %>% #distribution to follow-up event, truncated to not be negative
   
   #do we really need this?
-  set_attribute(key="state_DF", mod="+", value=function() 1) %>%
+  set_attribute(key="state.DF", mod="+", value=function() 1) %>%
   
   #insert counter years of surveillance
   set_attribute(key="surv.year", mod="+", value=function() 1) %>%
+  set_attribute(keys = "start.imaging", values = function() now(.env = sim)) %>%
   
   # Follow-up imaging event
   seize(resource = "Imaging") %>%
@@ -110,7 +110,7 @@ fup.trj <- trajectory() %>%
     keys = c("mod", "sens", "spec"),
     values = function() fn_img_mod(mod = sample(0:2, 1, replace = TRUE, prob = c(p.s.mammo, p.s.us, p.s.mri)))
   ) %>%
-  set_attribute(keys = "cost", values = function() fn_cost_img(mod = get_attribute(sim, "mod")), mod = "+") %>%
+  set_attribute(keys = "cost.img", values = function() fn_cost_img(mod = get_attribute(sim, "mod")), mod = "+") %>%
   set_attribute(
     keys = c("event"),
     values = function() fn_img_event(V_0 = V_0, t=now(.env = sim), vdt=get_attribute(sim, "vdt_lrr"), sens=get_attribute(sim, "sens"), spec=get_attribute(sim, "spec"))) %>%
@@ -125,18 +125,18 @@ fup.trj <- trajectory() %>%
            timeout(task = function() round(rtnorm(1, mean = 1, sd = 1, a = 0, b = 7))) %>% #time between imaging and result #TO DO VERIFY
            timeout(task = function() round(rtnorm(1, mean = 365, sd = 1, a = 0, b = 7))) %>% # 1 year?
            release(resource="TN", amount=1) %>%
-           rollback(target=13, times=Inf),
+           rollback(target=14, times=Inf),
          
          #Event 2: Suspicion with additional imaging
          trajectory() %>%
-           seize(resource = "A_Imaging") %>%
+           seize(resource = "A.Imaging") %>%
            set_attribute(
              keys = c("mod", "sens", "spec"),
              values = function() fn_img_mod(mod = sample(0:2, 1, replace = TRUE, prob = c(p.a.mammo, p.a.us, p.a.mri)))) %>%
-           set_attribute(keys = "cost", values = function() fn_cost_img(mod = get_attribute(sim, "mod")), mod = "+") %>%
+           set_attribute(keys = "cost.img", values = function() fn_cost_img(mod = get_attribute(sim, "mod")), mod = "+") %>%
            timeout(task = function() round(rtnorm(1, mean = 1, sd = 1, a = 0, b = 7))) %>% #time between screening and result #TO DO VERIFY
            # TO DO uitzoeken
-           release(resource = "A_Imaging") %>%
+           release(resource = "A.Imaging") %>%
            
            branch(option = function() fn_add_img_event(sens=get_attribute(sim, "sens"), spec=get_attribute(sim, "spec")), continue = c(F,T),
                   #Event 1: True Negative (return to DF)
@@ -145,7 +145,7 @@ fup.trj <- trajectory() %>%
                     timeout(task = function() round(rtnorm(1, mean = 1, sd = 1, a = 0, b = 7))) %>% #time between imaging and result #TO DO VERIFY
                     release(resource="TN", amount=1) %>%
                     timeout(365) %>% # 1 year?
-                    rollback(target=19, times=Inf),
+                    rollback(target=20, times=Inf),
             
                   #Event 2: True Positive / False Positive (biopsy to confirm)
                   trajectory() %>%
@@ -181,7 +181,7 @@ fup.trj <- trajectory() %>%
                     seize(resource="UU", amount=1) %>% 
                     release(resource="UU", amount=1) %>% 
                     timeout(365) %>% # 1 year wait?
-                    rollback(target=17) #to DF
+                    rollback(target=18) #to DF
                   ) %>%
          
            #UNDETECTED SYMPTOMATIC
@@ -208,11 +208,15 @@ fup.trj <- trajectory() %>%
  
 # Visualize trajectories
 plot(fup.trj, fill = scales::brewer_pal("qual", palette = "Set3"), verbose = T)
+plot(out.trj, fill = scales::brewer_pal("qual", palette = "Set3"), verbose = T)
+plot(treat.trj, fill = scales::brewer_pal("qual", palette = "Set3"), verbose = T)
+plot(dm.trj, fill = scales::brewer_pal("qual", palette = "Set3"), verbose = T)
 
 #save model plot as pdf
+library(DiagrammeRsvg)
 model <- plot(fup.trj, fill = scales::brewer_pal("qual", palette = "Set3"), verbose = T)
 model %>%
   export_svg() %>%
   charToRaw %>%
-  rsvg_pdf("model_240605.pdf")
+  rsvg_pdf("model_240730.pdf")
 
