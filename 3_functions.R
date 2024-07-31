@@ -57,7 +57,7 @@ fn_multif <- function(n.pat=1) {
   multif <- ifelse(runif(n.pat) < p.multi.y, 1, 0)
     return(multif)
 }
-#Pirmary surgery BCS or MST
+#Primary surgery BCS or MST
 fn_sur <- function(n.pat=1) {
   sur <- ifelse(runif(n.pat) < p.mst, 1, 0)
     return(sur)
@@ -68,9 +68,15 @@ fn_chemo <- function(n.pat=1) {
   return(chemo)
 }
 #Radiotherapy yes or no
-fn_radio <- function(n.pat=1) {
-  radio <- ifelse(runif(n.pat) < p.rt.y, 1, 0) 
-    return(radio)
+fn_radio <- function(sur, n.pat=1) {
+  if (sur == 1) {
+    radio <- ifelse(runif(n.pat) < p.mst.rt.y, 1, 0)
+    } else if (sur == 0) {
+    radio <- ifelse(runif(n.pat) < p.bsc.rt.y, 1, 0)
+    } else {
+    stop("Invalid value. No surgery defined")
+  }
+  return(radio)
 }
 #Hormonal status and therapy
 fn_horm <- function(n.pat=1) {
@@ -163,7 +169,7 @@ fn_t <- function(V_t = V_d, V_0, vdt) {
 
 ## IMAGING FUNCTIONS ## ----
 #DETERMINE the IMAGING MODALITY SENS & SPEC
-fn_img_mod <- function (mod = 0){
+fn_img_mod <- function(mod = 0){
   #mammo = 0
   if(mod == 0){
     sens <- p.sens.mammo
@@ -175,7 +181,7 @@ fn_img_mod <- function (mod = 0){
       sens <- p.sens.mri
       spec <- p.spec.mri
     }
-  out <- c(mod, cost, sens, spec)
+  out <- c(mod, sens, spec)
   
   return(out)  
 }
@@ -186,7 +192,7 @@ fn_img_mod <- function (mod = 0){
 # 3 = FN
 fn_img_event <- function(V_0, t, vdt, sens, spec) {
   out <- if(fn_vdt(V_0, t, vdt) >= V_d){
-    ifelse(runif(1) < sens, 2, 3)  # 1 = true positive, 0 = false negative
+    ifelse(runif(1) < sens, 2, 3)  # 2=suspicion after positive, 3 = false negative
   } else if(fn_vdt(V_0, t, vdt) < V_d){
     out <- ifelse(runif(1) < (1 - p.spec.test), 2, 1)      # 1 = false positive, 0 = true negative
   } else{
@@ -237,16 +243,15 @@ fn_img_wb <- function() {
 #COST of imaging mammo, us and mri
 fn_cost_img <- function(mod){
   #mammo = 0
-  if(mod == 1){
+  if(mod == 0){ #mammo=1
     cost <- c_mammo()
-  } else if(mod == 2){ #US = 1
+  } else if(mod == 1){ #US = 1
     cost <- c_us()
-  } else if(mod == 3){ #MRI = 2
+  } else if(mod == 2){ #MRI = 2
     cost <- c_mri()
   }
-  out <- c(cost)
-  
-  return(out)  
+
+  return(cost)  
 }
 
 #cost of nc_treatment
@@ -294,6 +299,30 @@ fn_cost_nc_treatment <- function(nc_ther) {
 }
 
 ## TREATMENT FUNCTIONS ## ----
+#type, cost and timeout for non curative treatment
+#TO DO INCLUDE costs
+fn_nc_treatment <- function(her2, hr, type) {
+  if (type==1) {
+    ther <- sample(0:4, 1, replace = TRUE, prob = c(p.o.s.horm, p.o.s.ch.tar, p.o.s.chemo, p.o.s.tar, p.o.s.n))
+    ther <- ifelse(runif(1)<p.o.l.rt, ther+5,ther) #plus local therapy
+  } else{
+    if(her2 > 0){
+      if(hr >0){  
+        ther <- ifelse(runif(1)<p.s.horm, 10, 11) #10 = horm, 11= target + chemo
+        ther <- ifelse(runif(1)<p.l.rt, ther+2,ther)#plus local therapy 12/13
+      } else{
+        ther <- 11 #target+chemo
+        ther <- ifelse(runif(1)<p.l.rt, ther+2,ther) #plus local therapy (13)
+      }
+    } else{
+      ther <- 14 #chemo
+      ther <- ifelse(runif(1)<p.l.rt, ther+1,ther) #plus local therapy
+    }
+  }
+  cost <- fn_cost_nc_treatment(ther)
+  return(ther, cost)
+}
+
 #Treatment after LRR diagnosis
 fn_treatment <- function(horm, sur, chemo) {
   #Date of biopsy to mastectomy: 2 to 6 weeks
@@ -348,30 +377,6 @@ fn_treatment <- function(horm, sur, chemo) {
   }
   
   return(c(out,cost,t))
-}
-
-#type, cost and timeout for non curative treatment
-#TO DO INCLUDE costs
-fn_nc_treatment <- function(her2, hr) {
-  if (type==1) {
-    ther <- sample(0:4, 1, replace = TRUE, prob = c(p.o.s.horm, p.o.s.ch.tar, p.o.s.chemo, p.o.s.tar, p.o.s.n))
-    ther <- ifelse(runif(1)<p.o.l.rt, ther+5,ther) #plus local therapy
-  } else{
-    if(her2 > 0){
-      if(hr >0){  
-        ther <- ifelse(runif(1)<p.s.horm, 10, 11) #10 = horm, 11= target + chemo
-        ther <- ifelse(runif(1)<p.l.rt, ther+2,ther)#plus local therapy 12/13
-      } else{
-        ther <- 11 #target+chemo
-        ther <- ifelse(runif(1)<p.l.rt, ther+2,ther) #plus local therapy (13)
-      }
-    } else{
-      ther <- 14 #chemo
-      ther <- ifelse(runif(1)<p.l.rt, ther+1,ther) #plus local therapy
-    }
-  }
-  cost <- fn_cost_nc_treatment(ther)
-  return(ther, cost)
 }
 
 ## SYMPTOMATIC DISEASE ## ----
@@ -458,5 +463,181 @@ fn_dynamic_visits <- function(original_times, mean = 15.5, sd = 10, n = length(o
   return(dynamic_visit_times)
 }
 
-#### INCOMPLETE #####
+#type, cost and timeout for non curative treatment - based on hr/her status
+#TO DO INCLUDE costs oligo 
+fn_nc_treatment2 <- function(her2, hr, type) {
+  if (type==1) {
+    #ther <- sample(0:4, 1, replace = TRUE, prob = c(p.o.s.horm, p.o.s.ch.tar, p.o.s.chemo, p.o.s.tar, p.o.s.n))
+    #ther <- ifelse(runif(1)<p.o.l.rt, ther+5,ther) #plus local therapy
+    prob_vector <- c(p.o.s.horm, p.o.s.ch.tar, p.o.s.chemo, p.o.s.tar, p.o.s.n)
+    names(prob_vector) <- c("p.o.s.horm", "p.o.s.ch.tar", "p.o.s.chemo", "p.o.s.tar", "p.o.s.n")
+    ther <- sample(names(prob_vector), 1, replace = TRUE, prob = prob_vector)
+    if (runif(1) < p.o.l.rt) {
+      ther <- append(ther, "p.o.l.rt")
+    }
+  } else { # type == 0
+    if (her2 > 0) { # HER+
+      if (hr > 0) { # HR+
+        prob_vector <- c(p.pp.t, p.pp.c, p.pp.h, p.pp.rt, p.pp.s)
+        names(prob_vector) <- c("p.pp.t", "p.pp.c", "p.pp.h", "p.pp.rt", "p.pp.s")
+      } else { # HR-
+        prob_vector <- c(p.mp.t, p.mp.c, p.mp.h, p.mp.rt, p.mp.s)
+        names(prob_vector) <- c("p.mp.t", "p.mp.c", "p.mp.h", "p.mp.rt", "p.mp.s")
+      }
+    } else { # HER-
+      if (hr > 0) { # HR+
+        prob_vector <- c(p.pm.t, p.pm.c, p.pm.h, p.pm.rt, p.pm.s)
+        names(prob_vector) <- c("p.pm.t", "p.pm.c", "p.pm.h", "p.pm.rt", "p.pm.s")
+      } else { # HR-
+        prob_vector <- c(p.mm.t, p.mm.c, p.mm.h, p.mm.rt, p.mm.s)
+        names(prob_vector) <- c("p.mm.t", "p.mm.c", "p.mm.h", "p.mm.rt", "p.mm.s")
+      }
+    }
+    ther <- names(prob_vector)[runif(length(prob_vector)) < prob_vector]
+  }
+  cost <- calculate_cost(ther, cost.vec.nc.treat)
+  #return(list(ther = ther, cost = cost))
+  return(list(ther, cost))
+}
 
+cost.vec.nc.treat <- list(
+  #oligo
+  p.o.s.horm.c = function() round(rtnorm(1, mean = 1, sd = 1, a = 0), digits = 2), 
+  p.o.s.ch.tar.c = function() round(rtnorm(1, mean = 1, sd = 1, a = 0), digits = 2), 
+  p.o.s.chemo.c = function() round(rtnorm(1, mean = 1, sd = 1, a = 0), digits = 2), 
+  p.o.s.tar.c = function() round(rtnorm(1, mean = 1, sd = 1, a = 0), digits = 2), 
+  p.o.s.n.c = function() round(rtnorm(1, mean = 1, sd = 1, a = 0), digits = 2),
+  p.o.l.rt.c = function() round(rtnorm(1, mean = 1, sd = 1, a = 0), digits = 2),
+  #non oligo
+  #HR+ / HER2+
+  p.pp.t.c = function() round(rtnorm(1, mean = 76588, sd = 56408, a = 0), digits = 2), 
+  p.pp.c.c = function() round(rtnorm(1, mean = 8641, sd = 7852, a = 0), digits = 2), 
+  p.pp.h.c = function() round(rtnorm(1, mean = 2912, sd = 5467, a = 0), digits = 2), 
+  p.pp.rt.c = function() round(rtnorm(1, mean = 3648, sd = 3658, a = 0), digits = 2), 
+  p.pp.s.c = function() round(rtnorm(1, mean = 1902, sd = 2230, a = 0), digits = 2),
+  #HR- / HER2+
+  p.mp.t.c = function() round(rtnorm(1, mean = 60350, sd = 58487, a = 0), digits = 2), 
+  p.mp.c.c = function() round(rtnorm(1, mean = 7907, sd = 6495, a = 0), digits = 2), 
+  p.mp.h.c = function() round(rtnorm(1, mean = 43, sd = 28, a = 0), digits = 2), 
+  p.mp.rt.c = function() round(rtnorm(1, mean = 3910, sd = 3209, a = 0), digits = 2), 
+  p.mp.s.c = function() round(rtnorm(1, mean = 3834, sd = 3652, a = 0), digits = 2),
+  #HR+ / HER2-
+  p.pm.t.c = function() round(rtnorm(1, mean = 34440, sd = 27406, a = 0), digits = 2), 
+  p.pm.c.c = function() round(rtnorm(1, mean = 9808, sd = 8712, a = 0), digits = 2), 
+  p.pm.h.c = function() round(rtnorm(1, mean = 2626, sd = 4656, a = 0), digits = 2), 
+  p.pm.rt.c = function() round(rtnorm(1, mean = 3363, sd = 4361, a = 0), digits = 2), 
+  p.pm.s.c = function() round(rtnorm(1, mean = 2617, sd = 2790, a = 0), digits = 2),
+  #HR- / HER2-
+  p.mm.t.c = function() round(rtnorm(1, mean = 37478, sd = 18775, a = 0), digits = 2), 
+  p.mm.c.c = function() round(rtnorm(1, mean = 9809, sd = 8368, a = 0), digits = 2), 
+  p.mm.h.c = function() round(rtnorm(1, mean = 13, sd = 9, a = 0), digits = 2), 
+  p.mm.rt.c = function() round(rtnorm(1, mean = 3586, sd = 4174, a = 0), digits = 2), 
+  p.mm.s.c = function() round(rtnorm(1, mean = 1780, sd = 2731, a = 0), digits = 2)
+)
+
+
+calculate_cost <- function(selected_parameters, cost.vec.nc.treat) {
+  selected_parameters <- paste0(selected_parameters,".c")
+  # Call the cost functions for the selected parameters
+  selected_costs <- sapply(selected_parameters, function(param) cost.vec.nc.treat[[param]]())
+  # Sum the costs
+  total_cost <- sum(selected_costs, na.rm = TRUE)
+  return(total_cost)
+}
+
+#TO DO costs uitzoeken
+c_poli <- function(n.pat=1){
+  cost <- round(rtnorm(n.pat, mean = 120, sd = 0, a = 0), digits = 2) #BRON: kostenhandleiding ZIN Euro 2022
+  return(cost)}
+
+#cost conventional OR, per minute
+c_or <- function(n.pat=1){
+  cost <- round(rtnorm(n.pat, mean = 11.09, sd = 0, a = 0), digits = 2) #BRON: kostenhandleiding ZIN Euro 2022
+  return(cost)}
+
+c_mammo <- function(n.pat=1){
+  cost <- round(rtnorm(n.pat, mean = 97.63, sd = 3.94, a = 0), digits = 2) #BRON: ZK23 & CZ24
+  return(cost)
+}
+c_us <- function(n.pat=1){
+  cost <- round(rtnorm(n.pat, mean = 89.86, sd = 3.88, a = 0), digits = 2) #BRON: ZK23 & CZ24
+  return(cost)
+}
+c_mri <- function(n.pat=1){
+  cost <- round(rtnorm(n.pat, mean = 295.52, sd = 9.55, a = 0), digits = 2) #BRON: ZK23 & CZ24
+  return(cost)
+}
+c_pet_wb <- function(n.pat=1){
+  cost <- round(rtnorm(n.pat, mean = 1048.83, sd = 327.51, a = 0), digits = 2) #BRON: ZK23 & CZ24
+  return(cost)
+}
+c_pet_pt <- function(n.pat=1){
+  cost <- round(rtnorm(n.pat, mean = 829.65, sd = 41.23, a = 0), digits = 2) #BRON: ZK23 & CZ24
+  return(cost)
+}
+c_biopsy <- function(n.pat=1){
+  cost <- round(rtnorm(n.pat, mean = 161.40, sd = 4.89 , a = 0), digits = 2) #BRON: ZK23 & CZ24
+  return(cost)
+} #dependent on image-guided?
+
+#treatment costs
+c_horm <- function(n.pat=1){
+  cost <- round(rtnorm(n.pat, mean = 1, sd = 1, a = 0), digits = 2)
+  return(cost)
+}
+c_radio <- function(n.pat=1){
+  cost <- round(rtnorm(n.pat, mean = 1, sd = 1, a = 0), digits = 2)
+  return(cost)
+}
+c_chemo <- function(n.pat=1){
+  cost <- round(rtnorm(n.pat, mean = 1, sd = 1, a = 0), digits = 2)
+  return(cost)
+}
+c_MST <- function(n.pat=1){
+  cost <- round(rtnorm(n.pat, mean = 1, sd = 1, a = 0), digits = 2)
+  return(cost)
+}
+c_tar <- function(n.pat=1){
+  cost <- round(rtnorm(n.pat, mean = 1, sd = 1, a = 0), digits = 2)
+  return(cost)
+}
+#treatment timeouts
+t_horm <- function(n.pat=1){
+  timeout <- round(rtnorm(n.pat, mean = 1, sd = 1, a = 0))
+  return(timeout)
+}
+t_radio <- function(n.pat=1){
+  timeout <- round(rtnorm(n.pat, mean = 1, sd = 1, a = 0))
+  return(timeout)
+}
+t_chemo <- function(n.pat=1){
+  timeout <- round(rtnorm(n.pat, mean = 1, sd = 1, a = 0))
+  return(timeout)
+}
+t_MST <- function(n.pat=1){
+  timeout <- round(rtnorm(n.pat, mean = 1, sd = 1, a = 0))
+  return(timeout)
+}
+t_tar <- function(n.pat=1){
+  timeout <- round(rtnorm(n.pat, mean = 1, sd = 1, a = 0))
+  return(timeout)
+}
+
+
+#### INCOMPLETE // WORK IN PROGRESS #####
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+      
