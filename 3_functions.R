@@ -12,14 +12,14 @@ fn_trnorm <- function(n, mean, sd, vdt_min = 1, vdt_max = Inf){
 }
 
 #update to include impact QALYs, costs etc
-fn_time_to_events <- function(currentime, attrb) {
+fn_time_to_events <- function(currenttime, attrb) {
   # currenttime         simulation time
   # attrb               vector with times of death other causes, time of lrr, time of dm (time of bc death?)
   
   time_start <- attrb[1]
   time_of_death <- currenttime
   
-  out <- c(time_of_death-time_start)
+  out <- c(time_of_death, time_start)
   
   return(out)
 }
@@ -27,10 +27,15 @@ fn_time_to_events <- function(currentime, attrb) {
 ## PATIENT CHARACTERISTICS ## ----
 #<60 0 | 60-69 1 | 70-79 2 | >= 80 3
 fn_age <- function(n.pat=1) {                           
-  age <- rtnorm(n.pat, mean = m.age, sd = sd.age, a = 18, b = 100)
+  age <- round(rtnorm(n.pat, mean = m.age, sd = sd.age, a = 18, b = 100),1)
   age.grp <- cut(age, breaks = c(-Inf, 60, 70, 80, Inf), labels = FALSE, right = FALSE) - 1 
   #-1 to have values 0,1,2,3 instead of 1,2,3,4
   return(c(age, age.grp))
+}
+fn_age_gp <- function(age, n.pat=1) {
+  age.grp <- cut(age, breaks = c(-Inf, 60, 70, 80, Inf), labels = FALSE, right = FALSE) - 1 
+  #-1 to have values 0,1,2,3 instead of 1,2,3,4
+  return(age.grp)
 }
 #Patient Sex (100% women) 1 = female, 0 = male
 fn_sex <- function(n.pat=1) {
@@ -121,17 +126,21 @@ fn_t_to_tumour <- function(risk_vector) {
 
 ## MORTALITY FUNCTIONS ## ----
 #Background mortality
-fn_days_death_oc <- function(age, sex, mortality_data) {
+fn_days_death_oc <- function(age, sex, mortality_data, days_survived = 0) {
   # Get the probability of dying for the given age and sex
-  prob_death <- mortality_data[age-17, 2+sex]
+  if(age >= 100){
+    prob_death <- mortality_data[82, 2+sex]
+  } else{
+    prob_death <- mortality_data[age-17, 2+sex]
+  }
   # Simulate death event based on probability
   death_event <- rbinom(1, 1, prob_death)
   if (death_event == 1) {
     # Individual dies
-    return((age-18)*365)
+    return(days_survived)
   } else {
     # Individual survives, increment age and check again
-    return(fn_days_death_oc(age + 1, sex, mortality_data))
+    return(fn_days_death_oc(age + 1, sex, mortality_data, days_survived+365))
   }
 }
 
@@ -191,51 +200,72 @@ fn_img_mod <- function(mod = 0){
 # 2 = Suspicion  / TP or FP 
 # 3 = FN
 fn_img_event <- function(V_0, t, vdt, sens, spec) {
-  out <- if(fn_vdt(V_0, t, vdt) >= V_d){
-    ifelse(runif(1) < sens, 2, 3)  # 2=suspicion after positive, 3 = false negative
+  if(vdt == 0){ #no recurrence, TP not possible
+    out <- ifelse(runif(1) < (1 - spec), 2, 1) # 1 = true negative, 2 = suspicion/FP
+    state <- 1
+  } else if(fn_vdt(V_0, t, vdt) >= V_d){
+    out <- ifelse(runif(1) < sens, 2, 3)  # 2=suspicion after positive/TP, 3 = false negative
+    state <- 2
   } else if(fn_vdt(V_0, t, vdt) < V_d){
-    out <- ifelse(runif(1) < (1 - p.spec.test), 2, 1)      # 1 = false positive, 0 = true negative
+    out <- ifelse(runif(1) < (1 - spec), 2, 1)      # 1 = true negative, 2 = suspicion/FP
+    state <- 3
   } else{
-    return("Something's up - check")
+    return("Check - imaging event")
   }
-  return(out)
+  return(c(out, state))
 }
 
 #DETERMINE Additional imaging event - FN no longer possible 
 # 1 = TN
 # 2 = TP / FP
 # Assumption: FN is not possible
-fn_add_img_event <- function(sens, spec){
+fn_add_img_event <- function(sens, spec, state){
   # Generate a random number between 0 and 1
   rand_num <- runif(1)
-  if (rand_num < sens) {
+  if(state == 1){ #no recurrence, TP not possible
+    if(rand_num < (1 - spec)){
+      event <- 2
+      TF <- 1
+    } else{
+      event <- 1
+      TF <- NA
+    } 
+    #VDT is not 0
+  } else if (state == 2) {
     # True Positive
-    return(2)
-  } else if (rand_num >= spec) {
-    # True Negative
-    return(1)
+    event <- ifelse(rand_num < sens, 2, 1) #2 TP, 1 FN (TN arm)
+    TF <- 2
+  } else if (state == 3) {
+    event <- ifelse(rand_num < (1-spec), 2, 1) #2 FP, 1 TN
+    TF <- 1
   } else {
-    # False Positive
-    return(2)
+    return("Check - state unknown")
   }
+  return(c(event, TF))
 }
 
 #BIOPSY result to distinguish FP and TP. Assumes 100% sensitivity
-fn_biopsy <- function(result = 1){
+fn_biopsy <- function(TF){
   #1 = negative biopsy / FP
   #2 = positive biopsy / TP
-  out <- ifelse(result == 1, 1, 
-                ifelse(result == 2, 2, "No correct biopsy result - CHECK"))
+  out <- ifelse(TF == 1, 1, 
+                ifelse(TF == 2, 2, "Check - biopsy result"))
   return(out)
 }
 
-#Whole body imaging - include mammo as well?
-fn_img_wb <- function() {
+#Whole body imaging - decision between whole body and partial pet based on ..
+fn_img_pet <- function() {
   #whole body imaging
-  mod <- 0
-  cost <- c_pet(1)
+  #pet wb = 3, pet pt =4
+  mod <- 3 #wb
+  #mod <- 4 #pt
   
-  out <- c(mod, cost) 
+  #if(mod == 3){
+  #  cost <- c_pet_wb()
+  #} else if(mod == 4){
+  #  cost <- c_pet_pt()
+  #}
+  out <- mod 
   return(out)
 }
 
@@ -243,14 +273,19 @@ fn_img_wb <- function() {
 #COST of imaging mammo, us and mri
 fn_cost_img <- function(mod){
   #mammo = 0
-  if(mod == 0){ #mammo=1
+  if(mod == 0){ #mammo = 0
     cost <- c_mammo()
   } else if(mod == 1){ #US = 1
     cost <- c_us()
   } else if(mod == 2){ #MRI = 2
     cost <- c_mri()
+  } else if(mod == 3){
+    cost <- c_pet_wb()
+  } else if(mod == 4){
+    cost <- c_pet_pt
+  } else{
+    stop("Invalid input: no imaging modality recognised")
   }
-
   return(cost)  
 }
 
