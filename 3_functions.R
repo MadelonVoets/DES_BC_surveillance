@@ -423,6 +423,8 @@ fn_days_symptomatic <- function(vdt, data, model, t = 0) {
   #message(paste('ok made it this far with t=',t_thres))
   # Get the probability of dying for the given age and sex
   prob_symp <- fn_symp_prob(vdt, t_thres, data, model)
+  #prob_symp <- fn_symp_probl(vdt, t_thres, model)  #Penalised model
+  prob_symp <- prob_symp * 0.01
   # Simulate death event based on probability
   symp_event <- rbinom(1, 1, prob_symp)
   if (symp_event == 1) {
@@ -430,7 +432,7 @@ fn_days_symptomatic <- function(vdt, data, model, t = 0) {
     return(t_thres)
   } else {
     # Individual has no symptoms yet, increment dfi and check again
-    return(fn_days_symptomatic(vdt, data, model, t + 30))
+    return(fn_days_symptomatic(vdt, data, model, t + 1))
   }
 }
 
@@ -660,6 +662,51 @@ t_tar <- function(n.pat=1){
 
 
 #### INCOMPLETE // WORK IN PROGRESS #####
+fn_risk2 = function(vector, matrix = inf_matrix, rec) {
+  matching_rows <- which(apply(matrix[, 1:10], 1, function(row) all(row == vector)))
+  if (length(matching_rows) > 0) {
+    matching_row <- matrix[matching_rows[1], ]
+    
+    if (rec == 1) {
+      # Apply the multipliers to the second, third, and fourth elements
+      result <- matching_row[13:17]
+      result[2] <- result[2] * 0.8   # Multiply second element (matching_row[14]) by 0.8
+      result[3] <- result[3] * 0.7   # Multiply third element (matching_row[15]) by 0.7
+      result[4] <- result[4] * 0.65  # Multiply fourth element (matching_row[16]) by 0.65
+      return(result)
+      
+    } else if (rec == 2) {
+      # Apply the same logic if needed for rec == 2 (you can adjust the column range here)
+      result <- matching_row[18:22]
+      result[2] <- result[2] * 0.8   # Multiply second element by 0.8
+      result[3] <- result[3] * 0.7   # Multiply third element by 0.7
+      result[4] <- result[4] * 0.65  # Multiply fourth element by 0.65
+      return(result)
+      
+    } else {
+      stop("Invalid value. Type should be either 1 (LRR) or 2 (DM).")
+    }
+  } else {
+    return(NULL) # No exact match found - which should not be possible
+  }
+}
+
+
+fn_symp_probl <- function(vdt, dfi, model) {
+  newx <- data.frame(Intercept = 1, vdt = vdt)
+    # Compute linear predictor using predict() for each dfi
+  # Note: Type = "link" gives the linear predictor
+  linear_predictor <- predict(model, newx = newx, type = "link")
+  
+  # Compute cumulative hazard (approximated as exp(linear predictor) * dfi)
+  cumulative_hazard <- exp(linear_predictor) * dfi
+  # Compute survival probability
+  survival_prob <- exp(-cumulative_hazard)
+  
+  # Compute probability of being symptomatic
+  p <- 1 - survival_prob
+  return(p)
+}
 
 
 
