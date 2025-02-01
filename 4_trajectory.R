@@ -147,10 +147,14 @@ fup.trj <- trajectory() %>%
     t = function() { 
       if (get_attribute(sim, "vdt_lrr") == 0) {
         return(Inf)  # A very large value to effectively never renege
+      } else if (get_attribute(sim, "treat.d")) {
+        return(Inf)  # A very large value to effectively never renege
       } else {
         return(now(.env = sim) + get_attribute(sim, "t_symp_lrr"))
       }
     }, out = treat.trj) %>%
+  
+  renege_abort() %>%
 
   # Time to imaging event from eligibility
   timeout(task = function() round(rnorm(1, mean = 365, sd = 15))) %>% #distribution to follow-up event, truncated to not be negative
@@ -296,6 +300,6 @@ model <- plot(fup.trj, fill = scales::brewer_pal("qual", palette = "Set3"), verb
 model %>%
   export_svg() %>%
   charToRaw %>%
-  rsvg_pdf("model_240911_2.pdf")
+  rsvg_pdf("model_250105.pdf")
 
 
