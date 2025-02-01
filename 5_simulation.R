@@ -29,6 +29,6 @@ print( proc.time() - start )
 
 sim.out <- get_mon_attributes(sim);       # retrieve the monitor object
 
-output <- getMultipleAttributes(c("name", "Age","Grade","Stage","Nstatus","Multif","Chemo", "Sur", "Radio", "Horm", "Antiher2", "t_LRR", "vdt_lrr", "t_DM", "treat.d", "treat.s", "t_symp_lrr", "surv.year", "start.imaging"), sim.out)
+output <- getMultipleAttributes(c("vdt_lrr"), sim.out)
 View(output)
 

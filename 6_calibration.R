@@ -303,16 +303,34 @@ surv.pred.dm <- survfit(Surv(ttod) ~ 1, data = sub.dm[sub.dm$type == 2,])
 
 
 # Plot together
-plot(surv.observed.w, col = "blue", main = "Fitted parametric survival curves", xlab = "Time since diagnosis (days)", ylab = "Survival probability", conf.int = F)
-lines(surv.observed.w, lwd=2, col = "blue", conf.int = F)
-lines(surv.observed.o, lwd=1, col='black', conf.int = F, linetype="dashed")
-lines(surv.observed.w.dm, lwd=2, col='red', conf.int = F)
-lines(surv.observed.dm, lwd=1, col='black', conf.int = F)
+plot(surv.observed.w, col = "red", xlab = "Time since diagnosis (days)", ylab = "Survival probability", conf.int = F, xlim=c(0,7000), cex.lab=1.5, cex.axis=1.4)
+#plot(surv.observed.w, col = "red", main = "Fitted parametric survival curves", xlab = "Time since diagnosis (days)", ylab = "Survival probability", conf.int = F, xlim=c(0,7000), cex.lab=1.5, cex.axis=1.4)
+lines(surv.observed.w, lwd=3, col = "red", conf.int = F)
+lines(surv.observed.o, lwd=3, col='black', conf.int = F, linetype="dashed")
+lines(surv.observed.w.dm, lwd=3, col='red', conf.int = F)
+lines(surv.observed.dm, lwd=3, col='black', conf.int = F)
 
-lines(surv.pred.dm, lwd=1, col='green', conf.int = F)
-lines(surv.pred.o, lwd=1, col='yellow', conf.int = F)
+lines(surv.pred.dm, lwd=3, col='#D788AD', conf.int = F)
+lines(surv.pred.o, lwd=3, col='#D788AD', conf.int = F)
 
-legend("topright", legend = c("Fit Oligo", "Observed", "Fit >3 DM", "Sim >3 DM", "Sim Oligo"), col = c("blue", "Black", "red", "green", "yellow"), lty = 1:2, bty = "n")
+legend("topright", legend = c("Fit Oligo", "Observed", "Fit >3 DM", "Sim >3 DM", "Sim Oligo"), col = c("red", "black", "red", "#D788AD", "#D788AD"), lty = 1:2, bty = "n")
+
+
+# Plot together
+png(file="saving_plot4.png",
+    height = 400,
+    width = 700)
+
+plot(surv.observed.o, col='black', xlab = "Time since diagnosis (days)", ylab = "Survival probability", conf.int = F, xlim=c(0,7000), cex.lab=1.5, cex.axis=1.4)
+lines(surv.observed.o, lwd=3, col='black', conf.int = F)
+lines(surv.observed.dm, lwd=3, col='black', conf.int = F)
+
+lines(surv.pred.dm, lwd=3, col='#D788AD', conf.int = F)
+lines(surv.pred.o, lwd=3, col='#D788AD', conf.int = F)
+
+legend("topright", legend = c("Observed Survival", "Simulated Survival"), col = c("black", "#D788AD"), lty = 1:1, bty = "n")
+
+dev.off()
 
 #shape = fit.wei$scale, scale = exp(fit.wei$coefficients))
 sub.dm$event <- 1
