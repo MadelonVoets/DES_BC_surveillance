@@ -1,6 +1,7 @@
 ## 6. MODEL CALIBRATION ----
 library(ggstatsplot)
 library(tidyr)
+library(ggplot2)
 
 #Test population
 test <- fn_gen_pt(100000)
@@ -94,11 +95,11 @@ risk.list <- apply(test, 1, function(row) {
 
 risks <- as.data.frame(do.call(rbind,risk.list))
 #risk.index <- rownames(risks)
-risks$con_1 <- risks$c_lrr1
-risks$con_2 <- risks$c_lrr2 - risks$c_lrr1
-risks$con_3 <- risks$c_lrr3 - risks$c_lrr2
-risks$con_4 <- risks$c_lrr4 - risks$c_lrr3
-risks$con_5 <- risks$c_lrr5 - risks$c_lrr4
+risks.bef$con_1 <- risks.bef$c_lrr1
+risks.bef$con_2 <- risks.bef$c_lrr2 - risks.bef$c_lrr1
+risks.bef$con_3 <- risks.bef$c_lrr3 - risks.bef$c_lrr2
+risks.bef$con_4 <- risks.bef$c_lrr4 - risks.bef$c_lrr3
+risks.bef$con_5 <- risks.bef$c_lrr5 - risks.bef$c_lrr4
 
 #conditional
 plot_df <- pivot_longer(risks, cols = 6:10)
@@ -303,23 +304,27 @@ surv.pred.dm <- survfit(Surv(ttod) ~ 1, data = sub.dm[sub.dm$type == 2,])
 
 
 # Plot together
-plot(surv.observed.w, col = "red", xlab = "Time since diagnosis (days)", ylab = "Survival probability", conf.int = F, xlim=c(0,7000), cex.lab=1.5, cex.axis=1.4)
-#plot(surv.observed.w, col = "red", main = "Fitted parametric survival curves", xlab = "Time since diagnosis (days)", ylab = "Survival probability", conf.int = F, xlim=c(0,7000), cex.lab=1.5, cex.axis=1.4)
-lines(surv.observed.w, lwd=3, col = "red", conf.int = F)
-lines(surv.observed.o, lwd=3, col='black', conf.int = F, linetype="dashed")
-lines(surv.observed.w.dm, lwd=3, col='red', conf.int = F)
-lines(surv.observed.dm, lwd=3, col='black', conf.int = F)
+plot(surv.observed.dm, col = "black", xlab = "Time since diagnosis (days)", ylab = "Survival probability", conf.int = F, xlim=c(0,7000), cex.lab=1.5, cex.axis=1.4)
+pct <- seq(.01,.99,by=.01)
+lines(surv.observed.dm, lwd=2, col='black', conf.int = F) #observed >3 DM
+lines(predict(fit.wei,type="quantile",p=pct)[1,],1-pct,col="red",lwd=2) #fit weibull dm
+lines(surv.observed.o, lwd=2, col='black', conf.int = F) #observed oligo
+lines(predict(fit.wei.o,type="quantile",p=pct)[1,],1-pct,col="red",lwd=2) #fit weibull oligo
+lines(surv.pred.dm, lwd=2, col='orange', conf.int = F) #based on test
+lines(surv.pred.o, lwd=2, col='orange', conf.int = F) #based on test
+legend("topright", legend = c("Fitted Oligo DM", "Observed", "Fitted >3 DM", "Simulated >3 DM", "Simulated Oligo DM"), col = c("red", "black", "red", "orange", "orange"), lty = 1, bty = "n")
 
-lines(surv.pred.dm, lwd=3, col='#D788AD', conf.int = F)
-lines(surv.pred.o, lwd=3, col='#D788AD', conf.int = F)
 
-legend("topright", legend = c("Fit Oligo", "Observed", "Fit >3 DM", "Sim >3 DM", "Sim Oligo"), col = c("red", "black", "red", "#D788AD", "#D788AD"), lty = 1:2, bty = "n")
+#lines(surv.observed.w, lwd=2, col = "red", conf.int = F)
+#lines(surv.observed.w.dm, lwd=2, col='red', conf.int = F)
+#lines(surv.observed.dm, lwd=2, col='black', conf.int = F)
+
 
 
 # Plot together
-png(file="saving_plot4.png",
+png(file="saving_plot7.png",
     height = 400,
-    width = 700)
+    width = 600)
 
 plot(surv.observed.o, col='black', xlab = "Time since diagnosis (days)", ylab = "Survival probability", conf.int = F, xlim=c(0,7000), cex.lab=1.5, cex.axis=1.4)
 lines(surv.observed.o, lwd=3, col='black', conf.int = F)
@@ -368,5 +373,112 @@ test.dm <- subset(test, t.DM > 0)
 ggplot(test.dm) + aes(x = t.DM) + geom_bar()
 
 
+###################################### Calibration 100 000 pt annual conditional risks
+summary(risks.bef$con_1)*100
+summary(risks.bef$con_2)*100
+summary(risks.bef$con_3)*100
+summary(risks.bef$con_4)*100
+summary(risks.bef$con_5)*100
 
+
+#reference - influence 2 cohort
+inf_ref <- data.frame(
+  Year = factor(1:5),
+  Mean = c(0.4943, 0.8969, 0.8380, 0.7083, 0.5022),        # Replace these with your actual mean values
+  LowerIQR = c(0.1614, 0.3990, 0.5937, 0.4662, 0.3517),      # Replace these with your actual lower IQR values
+  UpperIQR = c(0.5367, 1.0859, 1.0188, 0.7423, 0.5929)     # Replace these with your actual upper IQR values
+)
+
+#before calibration
+inf_bef <- data.frame(
+  Year = factor(1:5),
+  Mean = c(0.4501, 1.03554, 1.0010, 0.9680, 0.5895),        # Replace these with your actual mean values
+  LowerIQR = c(0.150, 0.4563, 0.6873, 0.6026, 0.3950),      # Replace these with your actual lower IQR values
+  UpperIQR = c(0.460, 1.22706, 1.2069, 1.0646, 0.7158)     # Replace these with your actual upper IQR value
+)
+
+#inf_aft <- data.frame(
+#  Year = factor(1:5),
+#  Mean = c(0.4501, 0.7654, 0.6224, 0.4651, 0.3930),        # Replace these with your actual mean values
+#  LowerIQR = c(0.1502, 0.3375, 0.4339, 0.2802, 0.2636),      # Replace these with your actual lower IQR values
+#  UpperIQR = c(0.4603, 0.9241, 0.7518, 0.5084, 0.4772)     # Replace these with your actual upper IQR values
+#)
+
+inf_aft <- data.frame(
+  Year = factor(1:5),
+  Mean = c(0.4501, 0.9005, 0.8117, 0.7165, 0.4913),        # Replace these with your actual mean values
+  LowerIQR = c(0.1502, 0.3987, 0.5639, 0.4420, 0.3292),      # Replace these with your actual lower IQR values
+  UpperIQR = c(0.4603, 1.0701, 0.9764, 0.7806, 0.5965)     # Replace these with your actual upper IQR values
+)
+
+inf_ref$Group <- 'Observed cohort'
+inf_bef$Group <- 'Before calibration'
+inf_aft$Group <- 'After calibration'
+
+
+# Combine the two dataframes
+inf_comb <- rbind(inf_aft, inf_ref, inf_bef)
+
+#from: Applying Risk-Based Follow-Up Strategies on the Dutch Breast Cancer Population: Consequences for Care and Costs (Draeger VIH 2020)
+plot <- ggplot(inf_comb, aes(x = Year, y = Mean, color = Group)) +
+  #geom_line(aes(group = Group)) +
+  geom_errorbar(aes(ymin = LowerIQR, ymax = UpperIQR), width = 0.3, position = position_dodge(0.3)) +
+  geom_point(position = position_dodge(0.3), size = 5) +
+  labs(title = " ", x = "Surveillance Year", y = "Conditional Risk") +
+  theme_minimal() +
+  #theme(legend.position="none") +
+  theme(text = element_text(size = 20), 
+        panel.grid.major.x = element_blank()) +
+  scale_color_manual(values = c("Before calibration" = "red", "Observed cohort" = "blue", "After calibration" = "darkgreen"))
+
+ggsave(
+  filename = paste0("Obs_risks_", format(Sys.time(), "%Y-%m-%d_%H-%M"), ".png"),
+  plot = plot,
+  path = "manuscript",
+  width = 13,
+  height = 10,
+  dpi = 400,
+  device = "png"
+)
+
+#VISUALIZATION OF RISKS
+#from: Applying Risk-Based Follow-Up Strategies on the Dutch Breast Cancer Population: Consequences for Care and Costs (Draeger VIH 2020)
+ggplot(inf_comb, aes(x = Year, y = Mean, color = Group)) +
+  geom_errorbar(aes(ymin = LowerIQR, ymax = UpperIQR), width = 0.2, position = position_dodge(0.3)) +
+  geom_point(position = position_dodge(0.3), size = 3) +
+  labs(title = "Combined Plot of Two Datasets for LRR", x = "Year", y = "Value") +
+  theme_minimal() +
+  scale_color_manual(values = c("Observed" = "blue", "Predicted" = "red"))
+
+
+###########
+png("survival_plot.png", width = 7, height = 5, units = "in", res = 300)
+# Plot with x-axis in years
+plot(surv.observed.dm, col = "white", xlab = "Time since diagnosis (years)", 
+     ylab = "Survival probability", conf.int = FALSE, 
+     xlim = c(0, 7000/365), cex.lab = 1.5, cex.axis = 1.4, xaxt = "n")
+
+# Add custom x-axis in years
+axis(1, at = seq(0, 7000/365, by = 2), labels = seq(0, 7000/365, by = 2), cex.axis = 1.4)
+
+# Define percentiles for quantile predictions
+pct <- seq(.01, .99, by = .01)
+
+# Overlay survival and prediction lines, transforming time from days to years
+lines(surv.observed.dm$time/365, surv.observed.dm$surv, lwd=2, col='black') # Observed >3 DM
+lines(predict(fit.wei, type="quantile", p=pct)[1,]/365, 1-pct, col="red", lwd=2) # Fitted Weibull DM
+
+lines(surv.observed.o$time/365, surv.observed.o$surv, lwd=2, col='black') # Observed Oligo
+lines(predict(fit.wei.o, type="quantile", p=pct)[1,]/365, 1-pct, col="red", lwd=2) # Fitted Weibull Oligo
+
+lines(surv.pred.dm$time/365, surv.pred.dm$surv, lwd=2, col='orange') # Simulated >3 DM
+lines(surv.pred.o$time/365, surv.pred.o$surv, lwd=2, col='orange') # Simulated Oligo DM
+
+# Add legend
+legend("topright", legend = c("Fitted Oligo DM", "Observed", "Fitted >3 DM", 
+                              "Simulated >3 DM", "Simulated Oligo DM"), 
+       col = c("red", "black", "red", "orange", "orange"), 
+       lty = 1, bty = "n")
+
+dev.off()
 

@@ -92,6 +92,8 @@ p.a.mri <- 0.05
 #Parameters probabilities of DM or oligo disease
 p.oligo <- 0.165
 p.noligo <- 0.835
+
+
 #Probabilities type of therapy for oligo
 p.o.l.rt <- 0.28
 p.o.s.horm <- 0.43
@@ -138,5 +140,138 @@ dm.scale = 0.8820885
 dm.coef = 6.989314            #OG: 7.089314 
 #Routine visits 
 routine_visit_times <- c(0, 365, 730, 1095, 1460, 1825)
+
+#utilities
+u_df_m <- 0.824  #disease free
+u_df_sd <- 0.824 
+
+u_lrr1_m <-  0.73 #first year lrr
+u_lrr1_sd <- 0.02
+
+u_lrr_m <-  0.71 #after 1 yr lrr
+u_lrr_sd <- 0.09
+
+u_lrr_srt_m <-  0.80 #treatment surgery  rt LRR
+u_lrr_srt_sd <- 0.27
+
+u_lrr_rt_m <-  0.77 #treatment rt LRR
+u_lrr_rt_sd <- 0.02
+
+u_lrr_ch_m <-  0.77 #treatment chemotherapy LRR
+u_lrr_ch_sd <- 0.02
+
+u_lrr_h_m <-  0.82 #treatment hormonal LRR
+u_lrr_h_sd <- 0.02
+
+u_lrr_mst_m <- 0.76 #treatment surgery alone LRR
+u_lrr_mst_sd <- 0.02
+
+u_dm1_m <-  0.58 #1st year dm
+u_dm1_sd <- 0.06
+
+u_dm_m <-  0.60 #after 1st yr DM
+u_dm_sd <- 0.05
+
+u_dm_t_m <-  0.602 #DM on treatment
+u_dm_t_sd <- 0.31
+
+#disutilities
+u_FP_b_m <- -0.058
+u_FP_b_sd <- 0.079
+
+u_FP_mri_m <- -0.067
+u_FP_mri_sd <- 0.083
+
+u_sdet_m <- -0.033
+u_sdet_sd <- 0.077
+
+#costs
+c_poli_m <- 128.67
+c_poli_sd <- c_poli_m * 0.2
+
+#cost conventional OR, per minute
+c_or_m <- 11.89
+c_or_sd <- c_or_m * 0.2
+
+#mammography
+c_mammo_m <- 109.20
+c_mammo_sd <- c_mammo_m * 0.2
+
+#ultrasound
+c_us_m <- 102.70
+c_us_sd <- c_us_m * 0.2
+
+#mri
+c_mri_m <- 286.22
+c_mri_sd <- c_mri_m * 0.2
+
+#whole body pet
+c_pet_wb_m <- 1040.91 
+c_pet_wb_sd <- c_pet_wb_m * 0.2
+
+#partial pet
+c_pet_pt_m <- 857.03
+c_pet_pt_sd <- c_pet_pt_m * 0.2
+
+#biopsy
+c_biopsy_m <- 176.65
+c_biopsy_sd <- c_biopsy_m * 0.2
+
+#hormonal therapy
+c_horm_m <- 3241.63
+c_horm_sd <- c_horm_m * 0.2
+
+#radiotherapy
+c_radio_m <- 8668.12
+c_radio_sd <- c_radio_m * 0.2 
+
+#chemotherapy
+c_chemo_m <- 4498.59
+c_chemo_sd <- c_chemo_m * 0.2
+
+#mastectomy
+c_MST_m <- 2043.76
+c_MST_sd <- c_MST_m * 0.2
+
+#targeted therapy
+c_tar_m <- 1
+c_tar_sd <- 1
+
+#treatment dm, per month
+c_dm_m <- 1621
+c_dm_sd <- 1254.45
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
 
 

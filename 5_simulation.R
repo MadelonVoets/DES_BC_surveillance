@@ -1,7 +1,7 @@
 ## 5. SIMULATION ----
 
 # Simulation settings
-n.patients <- 100;    # number of patients to simulate 
+n.patients <- 10;    # number of patients to simulate 
 mon.patients <- 2;    # level of monitoring (see add_generator)
 
 # Run simulation for the best standard care (bsc)
