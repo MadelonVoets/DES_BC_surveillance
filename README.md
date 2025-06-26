@@ -1,4 +1,4 @@
-# *DES_model*
+# Discrete Event Simulation with R
 
 DES model for breast cancer surveillance in the Netherlands
 
