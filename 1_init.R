@@ -11,8 +11,6 @@ library(rsvg);                   #Version 2.6.0
 library(readr)
 library(contsurvplot)
 library(survival)
-#ibrary(glmnet)
-#library(readxl)
 
 sessionInfo()
 
@@ -42,16 +40,4 @@ load("data_AEP.Rda")
 #symptomatic LRR 
 symp_cox_model <- coxph(Surv(time = dfi, event = symp) ~ vdt, data=df_patient, x=T)
 
-#Penalized and lasso model
-# X <- model.matrix(~ vdt, data = df_patient) # Model matrix for predictors
-# y <- Surv(df_patient$dfi, df_patient$symp)       # Survival outcome
-# 
-# # Fit a penalized Cox model
-# fit <- glmnet(X, y, family = "cox", alpha = 0.5) # Alpha controls LASSO (1) vs Ridge (0)
-# 
-# # Use cross-validation to find the best lambda (penalty parameter)
-# cv_fit <- cv.glmnet(X, y, family = "cox", alpha = 0.5)
-# 
-# # Refit the Cox model with the optimal lambda
-# pen_model <- glmnet(X, y, family = "cox", alpha = 0.5, lambda = cv_fit$lambda.min)
-# lasso_model <- cv.glmnet(X, y, family = "cox", alpha = 1)  # LASSO regularization
+
