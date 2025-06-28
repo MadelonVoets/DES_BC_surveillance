@@ -92,46 +92,8 @@ p.a.mri <- 0.05
 #Parameters probabilities of DM or oligo disease
 p.oligo <- 0.165
 p.noligo <- 0.835
-
-
-#Probabilities type of therapy for oligo
-p.o.l.rt <- 0.28
-p.o.s.horm <- 0.43
-p.o.s.chemo <- 0.12
-p.o.s.ch.tar <- 0.06
-p.o.s.tar <- 0.33
-p.o.s.n <- 0.06
-#Probabilities type of therapy non-oligo (oligo3 study)
-p.l.rt <- 0.30
-p.s.horm <- 0.57
-p.s.chemo <- 0.07
-p.s.ch.tar <- 0.05
-p.s.tar <- 0.27
-p.s.n <- 0.04
-#SONABRE REGISTRY
-p.pp.t <- 0.72
-p.pp.c <- 0.71
-p.pp.h <- 0.80
-p.pp.rt <- 0.54
-p.pp.s <- 0.42
-
-p.mp.t <- 0.64
-p.mp.c <- 0.64
-p.mp.h <- 0.04
-p.mp.rt <- 0.47
-p.mp.s <- 0.38
-
-p.pm.t <- 0.39
-p.pm.c <- 0.46
-p.pm.h <- 0.86
-p.pm.rt <- 0.50
-p.pm.s <- 0.30
-
-p.mm.t <- 0.27
-p.mm.c <- 0.59
-p.mm.h <- 0.06
-p.mm.rt <- 0.58
-p.mm.s <- 0.41
+#survival parameter bc death after lrr diagnosis
+lrr_exp_rate <- 5.781796e-05
 #survival parameters oligo dm (<3)
 oligo.scale = 0.9248594
 oligo.coef = 7.434267 
@@ -141,7 +103,7 @@ dm.coef = 6.989314            #OG: 7.089314
 #Routine visits 
 routine_visit_times <- c(0, 365, 730, 1095, 1460, 1825)
 
-#utilities
+#UTILITIES
 u_df_m <- 0.824  #disease free
 u_df_sd <- 0.824 
 
@@ -176,16 +138,17 @@ u_dm_t_m <-  0.602 #DM on treatment
 u_dm_t_sd <- 0.31
 
 #disutilities
-u_FP_b_m <- -0.058
+u_FP_b_m <- -0.058 #FP biopsy
 u_FP_b_sd <- 0.079
 
-u_FP_mri_m <- -0.067
+u_FP_mri_m <- -0.067 #FP MRI
 u_FP_mri_sd <- 0.083
 
-u_sdet_m <- -0.033
+u_sdet_m <- -0.033 #symptomatic detection
 u_sdet_sd <- 0.077
 
-#costs
+#COSTS
+#outpatient visit
 c_poli_m <- 128.67
 c_poli_sd <- c_poli_m * 0.2
 
