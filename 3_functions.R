@@ -187,6 +187,11 @@ fn_day_death_bc <- function(type) {
   }
   return(t)
 }
+#days until death after lrr diagnosis
+fn_day_death_lrr <- function(type) {
+    t <- rexp(1, rate = lrr_exp_rate)
+    return(t)
+    }
 
 ## VDT FUNCTIONS ## ----
 #Determine min-max range for volume doubling time 
