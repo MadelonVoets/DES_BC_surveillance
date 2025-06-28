@@ -152,7 +152,7 @@ fup.trj <- trajectory() %>%
     t = function() { 
       if (get_attribute(sim, "vdt_lrr") == 0) {
         return(Inf)  # A very large value to effectively never renege
-      } else if (get_attribute(sim, "treat.d")) {
+      } else if (exists(get_attribute(sim, "treat.d"))) {
         return(Inf)  # A very large value to effectively never renege
       } else {
         return(now(.env = sim) + get_attribute(sim, "t_symp_lrr"))
@@ -178,8 +178,8 @@ fup.trj <- trajectory() %>%
   branch(option = function() ifelse(get_attribute(sim, "surv.year") >= 6, 1,0), continue=c(F),
          # 1 End of Surveillance
          trajectory() %>%
-           set_attribute(keys = "End.Surveillance", values = function() now(.env = sim)) #%>%
-           #wait()
+           set_attribute(keys = "End.Surveillance", values = function() now(.env = sim)) %>%
+           join(out.trj)
          ) %>%
   
   set_attribute(keys = "start.imaging", values = function() now(.env = sim)) %>%
